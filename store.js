@@ -271,7 +271,7 @@ export function getAllRooms() {
   return localRooms;
 }
 
-export async function getRecentActiveRooms(limit = 6) {
+export async function getRecentActiveRooms(limit = 12) {
   if (pool) {
     try {
       const res = await pool.query(
@@ -282,6 +282,7 @@ export async function getRecentActiveRooms(limit = 6) {
         code: r.code,
         hostNickname: r.host_nickname,
         createdAt: Number(r.created_at),
+        onlineCount: localRooms.get(r.code)?.clients?.size || 0,
       }));
     } catch (e) {
       console.error("Erro ao listar salas do banco:", e.message);
@@ -295,5 +296,6 @@ export async function getRecentActiveRooms(limit = 6) {
       code: r.code,
       hostNickname: r.hostNickname,
       createdAt: r.createdAt,
+      onlineCount: r.clients ? r.clients.size : 0,
     }));
 }

@@ -112,33 +112,46 @@
           </form>
         </div>
 
-        <!-- CARD 2: ENTRAR COM CÓDIGO -->
+        <!-- CARD 2: ENTRAR COM CÓDIGO / SENHA -->
         <div class="lobby-card">
-          <div class="card-badge">Já tem um link?</div>
+          <div class="card-badge">Já tem a senha?</div>
           <div class="card-icon">🔑</div>
-          <h3>Entrar com Código</h3>
-          <p>Digite os 6 caracteres do final do link de convite que seu amigo compartilhou com você.</p>
+          <h3>Entrar com Senha de Convite</h3>
+          <p>A senha de cada sala é o seu código de convite (ex: TUMMJS). Digite a senha ou cole o link recebido.</p>
           
           <form id="form-join-room" class="card-form">
             <div class="field-group">
-              <label for="join-room-code">Código da Sala ou Link de Convite</label>
-              <input type="text" id="join-room-code" placeholder="Ex: 7X9K2M ou cole o link aqui..." maxlength="500" required class="input-code" autocomplete="off" />
+              <label for="join-room-code">Senha de Convite / Código da Sala</label>
+              <input type="text" id="join-room-code" placeholder="Ex: TUMMJS ou cole o link aqui..." maxlength="500" required class="input-code" autocomplete="off" />
             </div>
             <button type="submit" class="btn-secondary" id="btn-join-room">
-              <span>Entrar na Sala</span>
+              <span>🔓 Entrar com Senha</span>
             </button>
           </form>
         </div>
       </div>
 
-      <!-- SEÇÃO: SALAS ATIVAS RECENTES (Reutilização de Salas) -->
-      <div id="section-recent-rooms" class="recent-rooms-container hidden">
-        <div class="recent-header">
-          <h4>⚡ Salas Ativas Recentes</h4>
-          <span class="subtext">Evite limites de novas VMs reutilizando salas criadas:</span>
+      <!-- SEÇÃO: LISTA DE SALAS DISPONÍVEIS -->
+      <section id="section-rooms-list" class="rooms-list-section">
+        <div class="rooms-list-header">
+          <div class="header-titles">
+            <div class="section-tag">🟢 Transmissões Ativas</div>
+            <h3>🌐 Lista de Salas</h3>
+            <p class="section-subtext">Todas as salas são protegidas por senha. A <strong>senha de acesso é o código de convite</strong> (ex: TUMMJS).</p>
+          </div>
+          <button id="btn-refresh-rooms" class="btn-refresh" type="button" title="Atualizar Lista de Salas">
+            🔄 Atualizar Salas
+          </button>
         </div>
-        <div id="recent-rooms-grid" class="recent-rooms-grid"></div>
-      </div>
+
+        <div id="rooms-list-grid" class="rooms-list-grid"></div>
+
+        <div id="rooms-empty-state" class="rooms-empty-state hidden">
+          <div class="empty-icon">🛋️</div>
+          <h4>Nenhuma sala criada no momento</h4>
+          <p>Crie sua própria sala virtual acima para gerar sua senha de convite!</p>
+        </div>
+      </section>
     </main>
   </section>
 
@@ -154,11 +167,14 @@
         <div class="room-code-tag">
           <span class="label">SALA:</span>
           <span class="code-value" id="room-code-display">------</span>
-          <button id="btn-copy-code" class="btn-copy-pill" title="Copiar somente o código">
-            📋 Copiar Código
+          <span class="pass-divider">|</span>
+          <span class="label">🔑 SENHA:</span>
+          <span class="code-value highlight-pass" id="room-pass-display">------</span>
+          <button id="btn-copy-code" class="btn-copy-pill" title="Copiar a senha de convite da sala">
+            📋 Copiar Senha
           </button>
           <button id="btn-copy-link" class="btn-copy-pill highlight" title="Copiar o link completo de convite">
-            🔗 Copiar Link de Convite
+            🔗 Copiar Convite
           </button>
         </div>
       </div>
@@ -253,6 +269,27 @@
       </aside>
     </div>
   </section>
+
+  <!-- MODAL: DIGITAR SENHA DE CONVITE DA SALA -->
+  <div id="modal-password" class="modal-overlay hidden">
+    <div class="modal-card">
+      <button id="modal-close-btn" class="modal-close" type="button" title="Fechar">✕</button>
+      <div class="modal-icon">🔒</div>
+      <h3 id="modal-room-title">Sala Protegida</h3>
+      <p id="modal-room-desc">Para acessar esta sala, digite a <strong>senha de convite</strong> (ex: TUMMJS):</p>
+
+      <form id="form-modal-password" class="card-form">
+        <div class="field-group">
+          <label for="input-modal-password">Senha de Convite / Código</label>
+          <input type="text" id="input-modal-password" placeholder="Ex: TUMMJS ou link completo" required class="input-code" autocomplete="off" />
+        </div>
+        <div class="modal-btn-row">
+          <button type="button" id="btn-modal-cancel" class="btn-secondary">Cancelar</button>
+          <button type="submit" class="btn-primary" id="btn-modal-submit"><span>🔓 Desbloquear e Entrar</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- SCRIPT PRINCIPAL (ES MODULE) -->
   <script type="module" src="/app.js"></script>

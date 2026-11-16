@@ -290,7 +290,7 @@ async function handleRoomLookup(rawCode, req, res) {
 // Listar salas ativas recentes
 app.get("/api/rooms-recent", authMiddleware, async (req, res) => {
   try {
-    const rooms = await getRecentActiveRooms(6);
+    const rooms = await getRecentActiveRooms(12);
     res.json({ success: true, rooms });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

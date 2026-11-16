@@ -42,12 +42,26 @@ const lobbyElements = {
   btnCreateText: document.getElementById("btn-create-text"),
   formJoin: document.getElementById("form-join-room"),
   joinRoomCode: document.getElementById("join-room-code"),
-  sectionRecentRooms: document.getElementById("section-recent-rooms"),
-  recentRoomsGrid: document.getElementById("recent-rooms-grid"),
+  sectionRoomsList: document.getElementById("section-rooms-list"),
+  roomsListGrid: document.getElementById("rooms-list-grid"),
+  roomsEmptyState: document.getElementById("rooms-empty-state"),
+  btnRefreshRooms: document.getElementById("btn-refresh-rooms"),
+};
+
+const modalElements = {
+  overlay: document.getElementById("modal-password"),
+  closeBtn: document.getElementById("modal-close-btn"),
+  roomTitle: document.getElementById("modal-room-title"),
+  roomDesc: document.getElementById("modal-room-desc"),
+  form: document.getElementById("form-modal-password"),
+  inputPassword: document.getElementById("input-modal-password"),
+  btnCancel: document.getElementById("btn-modal-cancel"),
+  btnSubmit: document.getElementById("btn-modal-submit"),
 };
 
 const roomElements = {
   displayCode: document.getElementById("room-code-display"),
+  passDisplay: document.getElementById("room-pass-display"),
   btnCopyCode: document.getElementById("btn-copy-code"),
   btnCopyLink: document.getElementById("btn-copy-link"),
   btnLeave: document.getElementById("btn-leave-room"),
@@ -202,8 +216,8 @@ function onAuthSuccess() {
   lobbyElements.userDisplayName.textContent = state.user.nickname;
   lobbyElements.userAvatar.textContent = state.user.nickname.charAt(0).toUpperCase();
 
-  // Carrega salas ativas recentes para reutilização
-  loadRecentRooms();
+  // Carrega a lista de salas públicas disponíveis
+  loadRoomsList();
 
   // Se o usuário entrou por link de convite, entra direto na sala!
   if (state.pendingInviteCode) {
@@ -216,40 +230,152 @@ function onAuthSuccess() {
 }
 
 // ====================================================
-// SALAS RECENTES & REUTILIZAÇÃO (Evita Rate Limit)
+// LISTA DE SALAS DISPONÍVEIS & ACESSO POR SENHA
 // ====================================================
-async function loadRecentRooms() {
-  if (!state.token || !lobbyElements.sectionRecentRooms) return;
+let targetedRoomForModal = null;
+
+function openPasswordModal(room) {
+  targetedRoomForModal = room;
+  modalElements.roomTitle.textContent = `Sala de ${room.hostNickname}`;
+  modalElements.roomDesc.innerHTML = `Para entrar, insira a <strong>senha de convite</strong> da sala (ex: <code>${room.code}</code>):`;
+  modalElements.inputPassword.value = "";
+  modalElements.overlay.classList.remove("hidden");
+  setTimeout(() => modalElements.inputPassword.focus(), 50);
+}
+
+function closePasswordModal() {
+  modalElements.overlay.classList.add("hidden");
+  targetedRoomForModal = null;
+  modalElements.inputPassword.value = "";
+}
+
+// Eventos do Modal de Senha
+if (modalElements.closeBtn) modalElements.closeBtn.addEventListener("click", closePasswordModal);
+if (modalElements.btnCancel) modalElements.btnCancel.addEventListener("click", closePasswordModal);
+if (modalElements.overlay) {
+  modalElements.overlay.addEventListener("click", (e) => {
+    if (e.target === modalElements.overlay) closePasswordModal();
+  });
+}
+
+if (modalElements.form) {
+  modalElements.form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const pass = extractRoomCode(modalElements.inputPassword.value);
+    if (!pass) {
+      showToast("Por favor, digite a senha de convite da sala (ex: TUMMJS).", "error");
+      return;
+    }
+    closePasswordModal();
+    joinRoom(pass);
+  });
+}
+
+if (lobbyElements.btnRefreshRooms) {
+  lobbyElements.btnRefreshRooms.addEventListener("click", () => {
+    loadRoomsList();
+    showToast("Lista de salas atualizada!", "info");
+  });
+}
+
+async function loadRoomsList() {
+  if (!state.token || !lobbyElements.roomsListGrid) return;
+
   try {
     const res = await fetch("/api/rooms-recent", {
       headers: { Authorization: `Bearer ${state.token}` },
     });
+
     if (!res.ok) return;
     const data = await res.json();
-    if (data.rooms && data.rooms.length > 0) {
-      lobbyElements.recentRoomsGrid.innerHTML = "";
-      data.rooms.forEach((r) => {
-        const card = document.createElement("div");
-        card.className = "recent-room-pill";
-        card.innerHTML = `
-          <div class="recent-room-info">
-            <span class="code">${r.code}</span>
-            <span class="host">Host: ${escapeHTML(r.hostNickname)}</span>
-          </div>
-          <button class="btn-enter-recent" type="button">Entrar →</button>
-        `;
-        card.querySelector(".btn-enter-recent").addEventListener("click", () => {
-          joinRoom(r.code);
-        });
-        lobbyElements.recentRoomsGrid.appendChild(card);
-      });
-      lobbyElements.sectionRecentRooms.classList.remove("hidden");
-    } else {
-      lobbyElements.sectionRecentRooms.classList.add("hidden");
+    const rooms = data.rooms || [];
+
+    lobbyElements.roomsListGrid.innerHTML = "";
+
+    if (rooms.length === 0) {
+      lobbyElements.roomsEmptyState.classList.remove("hidden");
+      return;
     }
+
+    lobbyElements.roomsEmptyState.classList.add("hidden");
+
+    rooms.forEach((r) => {
+      const isOwner =
+        state.user &&
+        r.hostNickname &&
+        r.hostNickname.toLowerCase() === state.user.nickname.toLowerCase();
+
+      const card = document.createElement("div");
+      card.className = `room-card-item ${isOwner ? "is-own" : ""}`;
+
+      const timeAgo = formatTimeAgo(r.createdAt);
+
+      card.innerHTML = `
+        <div class="room-card-top">
+          <div class="room-title-area">
+            <span class="room-host-title">
+              ${isOwner ? "👑" : "🖥️"} Sala de ${escapeHTML(r.hostNickname)}
+            </span>
+            <span class="room-time-meta">Criada ${timeAgo} • ${r.onlineCount || 0} online</span>
+          </div>
+          <span class="room-badge-pill ${isOwner ? "owner" : "lock"}">
+            ${isOwner ? "👑 Sua Sala" : "🔒 Protegida"}
+          </span>
+        </div>
+
+        <div class="room-card-body">
+          <span class="pass-label">🔑 Senha da Sala:</span>
+          ${
+            isOwner
+              ? `<span class="pass-code">${r.code}</span>`
+              : `<span class="pass-hint">Senha necessária (ex: ${r.code})</span>`
+          }
+        </div>
+
+        <div class="room-card-actions">
+          <button class="btn-card-enter" type="button">
+            ${isOwner ? "Entrar Direto →" : "🔑 Inserir Senha e Entrar"}
+          </button>
+          <button class="btn-card-copy" type="button" title="Copiar Senha de Convite">
+            📋 Copiar Senha
+          </button>
+        </div>
+      `;
+
+      // Botão Entrar
+      card.querySelector(".btn-card-enter").addEventListener("click", () => {
+        if (isOwner) {
+          joinRoom(r.code);
+        } else {
+          openPasswordModal(r);
+        }
+      });
+
+      // Botão Copiar Senha
+      card.querySelector(".btn-card-copy").addEventListener("click", async () => {
+        const ok = await copyToClipboard(r.code);
+        if (ok) {
+          showToast(`Senha de convite (${r.code}) copiada!`, "success");
+        }
+      });
+
+      lobbyElements.roomsListGrid.appendChild(card);
+    });
   } catch (err) {
-    console.warn("Erro ao carregar salas recentes:", err);
+    console.warn("Erro ao listar salas:", err);
   }
+}
+
+function formatTimeAgo(timestamp) {
+  if (!timestamp) return "recentemente";
+  const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+  if (diffSec < 60) return "agora há pouco";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `há ${diffMin} min`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `há ${diffHours}h`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `há ${diffDays}d`;
 }
 
 // Alternar abas Entrar / Cadastrar
@@ -362,7 +488,7 @@ lobbyElements.formCreate.addEventListener("submit", async (e) => {
 
     // Se bater no limite de taxa temporário, atualiza as salas disponíveis e inicia cooldown visível
     if (err.message.includes("Limite temporário") || err.message.includes("429")) {
-      loadRecentRooms();
+      loadRoomsList();
       let cooldown = 60;
       lobbyElements.btnCreateRoom.disabled = true;
       const interval = setInterval(() => {
@@ -441,6 +567,9 @@ async function joinRoom(rawCode) {
     // Exibe a tela da sala
     showScreen("room");
     roomElements.displayCode.textContent = room.code;
+    if (roomElements.passDisplay) {
+      roomElements.passDisplay.textContent = room.code;
+    }
 
     // Configura o placeholder de carregamento
     roomElements.browserMount.innerHTML = `
@@ -622,14 +751,14 @@ roomElements.btnToggleControl.addEventListener("click", () => {
   }
 });
 
-// COPIAR CÓDIGO DA SALA (Somente os 6 caracteres)
+// COPIAR SENHA DE CONVITE DA SALA (Somente os 6 caracteres)
 roomElements.btnCopyCode.addEventListener("click", async () => {
   if (!state.currentRoom) return;
   const ok = await copyToClipboard(state.currentRoom.code);
   if (ok) {
-    showToast(`Código ${state.currentRoom.code} copiado!`, "success");
+    showToast(`Senha de convite (${state.currentRoom.code}) copiada!`, "success");
   } else {
-    showToast("Não foi possível copiar o código.", "error");
+    showToast("Não foi possível copiar a senha de convite.", "error");
   }
 });
 
@@ -657,7 +786,7 @@ roomElements.btnLeave.addEventListener("click", () => {
   }
   state.currentRoom = null;
   window.history.pushState({}, "", "/");
-  loadRecentRooms();
+  loadRoomsList();
   showScreen("lobby");
 });
 
