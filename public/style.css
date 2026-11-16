@@ -1022,6 +1022,10 @@ body {
   justify-content: center;
   background: #050507;
   position: relative;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* Garante que o iframe/canvas interno do Hyperbeam ocupe tudo */
@@ -1053,32 +1057,72 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* DOCK FLUTUANTE DE CONTROLE */
+/* DOCK FLUTUANTE DE CONTROLE (SLIM & MODULAR) */
 .room-dock {
   position: absolute;
-  bottom: 20px;
+  bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--bg-glass);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--border-strong);
+  background: rgba(14, 14, 20, 0.82);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 9999px;
-  padding: 6px 14px;
+  padding: 4px 10px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  gap: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 1px rgba(255, 255, 255, 0.18);
   z-index: 20;
-  transition: opacity 0.3s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 95vw;
+}
+
+.room-dock.slim {
+  padding: 3px 8px;
+  gap: 5px;
+}
+
+.dock-collapsible {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.room-dock.collapsed .dock-collapsible {
+  display: none !important;
+}
+
+.collapse-arrow {
+  display: inline-block;
+  font-size: 0.65rem;
+  line-height: 1;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--text-secondary);
+}
+
+.room-dock.collapsed .collapse-arrow {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.btn-collapse {
+  opacity: 0.85;
+}
+
+.btn-collapse:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .control-status {
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   font-weight: 600;
   color: var(--text-secondary);
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.05);
+  white-space: nowrap;
 }
 
 .control-status.controlling {
@@ -1092,12 +1136,18 @@ body {
   color: #fff;
   border: none;
   font-family: var(--font-main);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  padding: 6px 14px;
+  padding: 5px 12px;
   border-radius: 999px;
   cursor: pointer;
   transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btn-dock-slim {
+  font-size: 0.74rem;
+  padding: 4px 10px;
 }
 
 .btn-dock:hover {
@@ -1114,15 +1164,21 @@ body {
   color: var(--text-secondary);
   border: 1px solid var(--border-subtle);
   font-family: var(--font-main);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  padding: 6px 14px;
+  padding: 4px 10px;
   border-radius: 999px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btn-dock-pill-slim {
+  padding: 3px 8px;
+  font-size: 0.72rem;
 }
 
 .btn-dock-pill:hover {
@@ -1144,27 +1200,28 @@ body {
 
 .dock-divider {
   width: 1px;
-  height: 20px;
-  background: var(--border-subtle);
+  height: 16px;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .volume-control {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
 }
 
 .btn-dock-icon {
   background: transparent;
   border: none;
-  font-size: 1rem;
+  font-size: 0.9rem;
   cursor: pointer;
   color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: var(--transition);
 }
 
 .btn-dock-icon:hover {
@@ -1172,9 +1229,95 @@ body {
 }
 
 #volume-slider {
-  width: 70px;
+  width: 55px;
+  height: 3px;
   accent-color: var(--accent);
   cursor: pointer;
+}
+
+/* BARRA DE DIGITAÇÃO MOBILE / TECLADO VIRTUAL */
+.mobile-typing-bar {
+  position: absolute;
+  bottom: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  width: 90%;
+  max-width: 440px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-typing-bar.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(12px) scale(0.96);
+}
+
+.typing-bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(18, 18, 26, 0.94);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(99, 102, 241, 0.15);
+  border-radius: 9999px;
+  padding: 4px 6px 4px 12px;
+}
+
+.typing-icon {
+  font-size: 1rem;
+  color: #a5b4fc;
+}
+
+.typing-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-family: var(--font-main);
+  font-size: 0.84rem;
+  padding: 4px 2px;
+}
+
+.typing-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.78rem;
+}
+
+.btn-typing-send {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-family: var(--font-main);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btn-typing-send:hover {
+  background: var(--accent-hover);
+}
+
+.btn-typing-close {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  border: none;
+  font-size: 0.8rem;
+  padding: 5px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-typing-close:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
 }
 
 /* SIDEBAR (CHAT & USUÁRIOS) */
@@ -1191,6 +1334,7 @@ body {
   width: 0;
   overflow: hidden;
   border-left: none;
+  pointer-events: none;
 }
 
 .sidebar-header {
@@ -1342,7 +1486,39 @@ body {
     right: 0;
     top: 0;
     bottom: 0;
+    width: 290px;
+    max-width: 85vw;
     z-index: 30;
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
+    transform: translateX(0);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  }
+  .room-sidebar.collapsed {
+    transform: translateX(100%);
+    width: 290px !important;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .room-dock {
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    padding: 3px 6px;
+    gap: 4px;
+    max-width: 96vw;
+  }
+  .btn-dock-slim {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+  }
+  .btn-dock-pill-slim {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+  .control-status {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+  }
+  .mobile-typing-bar {
+    bottom: calc(50px + env(safe-area-inset-bottom, 0px));
+    width: 95%;
   }
 }

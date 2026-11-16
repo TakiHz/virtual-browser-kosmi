@@ -35,10 +35,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Servir o SDK do Hyperbeam compilado como ES Module nativo
 app.get("/hyperbeam.js", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, "node_modules/@hyperbeam/web/dist/index.js"),
-    { headers: { "Content-Type": "application/javascript; charset=utf-8" } }
-  );
+  const filePath = path.resolve(__dirname, "node_modules", "@hyperbeam", "web", "dist", "index.js");
+  res.sendFile(filePath, { headers: { "Content-Type": "application/javascript; charset=utf-8" } });
 });
 
 // Middleware de Autenticação

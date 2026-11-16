@@ -60,6 +60,15 @@ const modalElements = {
 };
 
 const roomElements = {
+  roomDock: document.getElementById("room-dock"),
+  btnCollapseDock: document.getElementById("btn-collapse-dock"),
+  collapseArrowIcon: document.getElementById("collapse-arrow-icon"),
+  dockCollapsible: document.getElementById("dock-collapsible"),
+  btnToggleKeyboard: document.getElementById("btn-toggle-keyboard"),
+  mobileTypingBar: document.getElementById("mobile-typing-bar"),
+  mobileKeyboardProxy: document.getElementById("mobile-keyboard-proxy"),
+  btnSendTypedText: document.getElementById("btn-send-typed-text"),
+  btnCloseTypingBar: document.getElementById("btn-close-typing-bar"),
   displayCode: document.getElementById("room-code-display"),
   passDisplay: document.getElementById("room-pass-display"),
   btnCopyCode: document.getElementById("btn-copy-code"),
@@ -611,6 +620,9 @@ async function mountHyperbeam(embedUrl) {
     // Ativa o protetor anti-popup inteligente na sessão
     setupAntiPopupGuard(state.hbInstance);
 
+    // Ativa suporte touch para celular (mexer mouse com o dedo)
+    setupMobileTouchAndGestures();
+
     showToast("Navegador virtual carregado com sucesso!", "success");
   } catch (err) {
     console.error("Erro ao inicializar Hyperbeam:", err);
@@ -650,6 +662,292 @@ function setupAntiPopupGuard(hb) {
   } catch (err) {
     console.warn("Não foi possível registrar o listener de abas do Hyperbeam:", err);
   }
+}
+
+// ====================================================
+// NAVEGAÇÃO TOUCH MOBILE (MEXER O MOUSE PELO CELULAR)
+// ====================================================
+function setupMobileTouchAndGestures() {
+  const mount = roomElements.browserMount;
+  if (!mount) return;
+
+  if (mount.dataset.touchBound === "true") return;
+  mount.dataset.touchBound = "true";
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  let isMoving = false;
+  let lastTwoFingerCenterY = null;
+
+  function getNormalizedCoords(touch) {
+    const rect = mount.getBoundingClientRect();
+    if (!rect.width || !rect.height) return { x: 0.5, y: 0.5 };
+    const rawX = touch.clientX - rect.left;
+    const rawY = touch.clientY - rect.top;
+    const x = Math.max(0, Math.min(1, rawX / rect.width));
+    const y = Math.max(0, Math.min(1, rawY / rect.height));
+    return { x, y };
+  }
+
+  // Toque inicial (touchstart)
+  mount.addEventListener("touchstart", (e) => {
+    if (!state.hbInstance) return;
+
+    if (!state.isControlling) {
+      return;
+    }
+
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      touchStartTime = Date.now();
+      isMoving = false;
+
+      const coords = getNormalizedCoords(touch);
+      try {
+        state.hbInstance.sendEvent({
+          type: "mousemove",
+          x: coords.x,
+          y: coords.y,
+        });
+      } catch (err) {
+        console.warn("Touchstart sendEvent error:", err);
+      }
+    } else if (e.touches.length === 2) {
+      lastTwoFingerCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    }
+  }, { passive: true });
+
+  // Mover o dedo (touchmove): mexe o cursor suavemente
+  mount.addEventListener("touchmove", (e) => {
+    if (!state.hbInstance || !state.isControlling) return;
+
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      const dist = Math.hypot(touch.clientX - touchStartX, touch.clientY - touchStartY);
+      if (dist > 3) {
+        isMoving = true;
+      }
+      const coords = getNormalizedCoords(touch);
+      try {
+        state.hbInstance.sendEvent({
+          type: "mousemove",
+          x: coords.x,
+          y: coords.y,
+        });
+      } catch (err) {
+        console.warn("Touchmove sendEvent error:", err);
+      }
+    } else if (e.touches.length === 2) {
+      // Rolagem com 2 dedos (scroll wheel)
+      const currentCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      if (lastTwoFingerCenterY !== null) {
+        const deltaY = (lastTwoFingerCenterY - currentCenterY) * 2;
+        try {
+          state.hbInstance.sendEvent({
+            type: "wheel",
+            deltaY: deltaY,
+            deltaX: 0,
+          });
+        } catch (err) {
+          console.warn("Wheel sendEvent error:", err);
+        }
+      }
+      lastTwoFingerCenterY = currentCenterY;
+      if (e.cancelable) e.preventDefault();
+    }
+  }, { passive: false });
+
+  // Soltar o dedo (touchend): clique onde o usuário tocou
+  mount.addEventListener("touchend", (e) => {
+    if (!state.hbInstance) return;
+
+    if (!state.isControlling) {
+      if (e.changedTouches.length > 0) {
+        showToast("Toque em '🎮 Controle' abaixo para mexer no virtual!", "info");
+      }
+      return;
+    }
+
+    if (e.changedTouches.length === 1 && !isMoving) {
+      const duration = Date.now() - touchStartTime;
+      if (duration < 450) {
+        const touch = e.changedTouches[0];
+        const coords = getNormalizedCoords(touch);
+        try {
+          state.hbInstance.sendEvent({
+            type: "mousemove",
+            x: coords.x,
+            y: coords.y,
+          });
+          state.hbInstance.sendEvent({
+            type: "mousedown",
+            x: coords.x,
+            y: coords.y,
+            button: 0,
+          });
+          setTimeout(() => {
+            if (state.hbInstance) {
+              state.hbInstance.sendEvent({
+                type: "mouseup",
+                x: coords.x,
+                y: coords.y,
+                button: 0,
+              });
+            }
+          }, 40);
+        } catch (err) {
+          console.warn("Tap click sendEvent error:", err);
+        }
+      }
+    }
+
+    if (e.touches.length === 0) {
+      lastTwoFingerCenterY = null;
+      isMoving = false;
+    }
+  }, { passive: true });
+}
+
+// ====================================================
+// TECLADO NA TELA & BARRA DE DIGITAÇÃO MOBILE
+// ====================================================
+function setupKeyboardProxy() {
+  const toggleBtn = roomElements.btnToggleKeyboard;
+  const typingBar = roomElements.mobileTypingBar;
+  const inputProxy = roomElements.mobileKeyboardProxy;
+  const sendBtn = roomElements.btnSendTypedText;
+  const closeBtn = roomElements.btnCloseTypingBar;
+
+  if (!toggleBtn || !typingBar || !inputProxy) return;
+
+  function openKeyboard() {
+    typingBar.classList.remove("hidden");
+    inputProxy.focus();
+  }
+
+  function closeKeyboard() {
+    typingBar.classList.add("hidden");
+    inputProxy.blur();
+  }
+
+  toggleBtn.addEventListener("click", () => {
+    if (!state.isControlling) {
+      showToast("Toque em '🎮 Controle' primeiro para poder digitar no virtual.", "info");
+      return;
+    }
+    if (typingBar.classList.contains("hidden")) {
+      openKeyboard();
+    } else {
+      closeKeyboard();
+    }
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", closeKeyboard);
+  }
+
+  function sendTextToVirtual(text) {
+    if (!state.hbInstance || !state.isControlling) return;
+    if (text) {
+      for (const char of text) {
+        state.hbInstance.sendEvent({ type: "keydown", key: char });
+        state.hbInstance.sendEvent({ type: "keyup", key: char });
+      }
+    }
+  }
+
+  function sendEnterKey() {
+    if (!state.hbInstance || !state.isControlling) return;
+    state.hbInstance.sendEvent({ type: "keydown", key: "Enter" });
+    state.hbInstance.sendEvent({ type: "keyup", key: "Enter" });
+  }
+
+  if (sendBtn) {
+    sendBtn.addEventListener("click", () => {
+      const val = inputProxy.value;
+      if (val) {
+        sendTextToVirtual(val);
+        sendEnterKey();
+        showToast("Texto enviado! ↵", "info");
+      } else {
+        sendEnterKey();
+      }
+      inputProxy.value = "";
+      inputProxy.focus();
+    });
+  }
+
+  // Teclas especiais e Enter no teclado móvel
+  inputProxy.addEventListener("keydown", (e) => {
+    if (!state.hbInstance || !state.isControlling) return;
+
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const val = inputProxy.value;
+      if (val) {
+        sendTextToVirtual(val);
+      }
+      sendEnterKey();
+      inputProxy.value = "";
+      return;
+    }
+
+    if (e.key === "Backspace") {
+      if (inputProxy.value.length === 0) {
+        state.hbInstance.sendEvent({ type: "keydown", key: "Backspace" });
+        state.hbInstance.sendEvent({ type: "keyup", key: "Backspace" });
+      }
+      return;
+    }
+
+    if (e.key === "Tab" || e.key === "Escape" || e.key.startsWith("Arrow")) {
+      state.hbInstance.sendEvent({ type: "keydown", key: e.key });
+      state.hbInstance.sendEvent({ type: "keyup", key: e.key });
+      return;
+    }
+  });
+
+  // Digitação em tempo real (incluindo autocompletar e swype do celular)
+  inputProxy.addEventListener("input", (e) => {
+    if (!state.hbInstance || !state.isControlling) return;
+
+    if (e.inputType === "insertText" && e.data) {
+      sendTextToVirtual(e.data);
+    }
+  });
+}
+
+// ====================================================
+// OCULTAR / COLAPSAR OPÇÕES COM SETA PARA BAIXO (SLIM)
+// ====================================================
+function setupDockCollapse() {
+  const dock = roomElements.roomDock;
+  const btnCollapse = roomElements.btnCollapseDock;
+  const arrowIcon = roomElements.collapseArrowIcon;
+
+  if (!dock || !btnCollapse) return;
+
+  const isCollapsed = localStorage.getItem("dock_collapsed") === "true";
+  if (isCollapsed) {
+    dock.classList.add("collapsed");
+    if (arrowIcon) arrowIcon.textContent = "▲";
+    btnCollapse.title = "Mostrar opções de volume e pop-up";
+  }
+
+  btnCollapse.addEventListener("click", () => {
+    dock.classList.toggle("collapsed");
+    const collapsed = dock.classList.contains("collapsed");
+    if (arrowIcon) {
+      arrowIcon.textContent = collapsed ? "▲" : "▼";
+    }
+    btnCollapse.title = collapsed
+      ? "Mostrar opções de volume e pop-up"
+      : "Ocultar opções de volume e pop-up";
+    localStorage.setItem("dock_collapsed", String(collapsed));
+  });
 }
 
 function connectRoomWebSocket(code) {
@@ -727,16 +1025,16 @@ function updateRoomState(data) {
 
   if (isMeControlling) {
     roomElements.controlStatusBadge.className = "control-status controlling";
-    roomElements.controlStatusText.textContent = "🎮 Você está no controle";
-    roomElements.btnToggleControl.textContent = "Liberar Controle";
-    roomElements.btnToggleControl.className = "btn-dock active-control";
+    roomElements.controlStatusText.textContent = "🎮 No controle";
+    roomElements.btnToggleControl.textContent = "Liberar";
+    roomElements.btnToggleControl.className = "btn-dock btn-dock-slim active-control";
   } else {
     roomElements.controlStatusBadge.className = "control-status";
     roomElements.controlStatusText.textContent = controllerName
-      ? `👀 ${controllerName} está controlando`
-      : "👀 Controle livre";
-    roomElements.btnToggleControl.textContent = "🎮 Assumir Controle";
-    roomElements.btnToggleControl.className = "btn-dock";
+      ? `👀 ${controllerName}`
+      : "👀 Livre";
+    roomElements.btnToggleControl.textContent = "🎮 Controle";
+    roomElements.btnToggleControl.className = "btn-dock btn-dock-slim";
   }
 }
 
@@ -855,12 +1153,12 @@ if (roomElements.btnTogglePopupBlock) {
   roomElements.btnTogglePopupBlock.addEventListener("click", () => {
     state.blockPopups = !state.blockPopups;
     if (state.blockPopups) {
-      roomElements.btnTogglePopupBlock.className = "btn-dock-pill active";
-      roomElements.btnTogglePopupBlock.textContent = "🛡️ Pop-ups: Bloqueados";
+      roomElements.btnTogglePopupBlock.className = "btn-dock-pill btn-dock-pill-slim active";
+      roomElements.btnTogglePopupBlock.textContent = "🛡️ Pop-ups: ON";
       showToast("Bloqueador de pop-ups ATIVADO! 🛡️", "success");
     } else {
-      roomElements.btnTogglePopupBlock.className = "btn-dock-pill disabled";
-      roomElements.btnTogglePopupBlock.textContent = "⚠️ Pop-ups: Permitidos";
+      roomElements.btnTogglePopupBlock.className = "btn-dock-pill btn-dock-pill-slim disabled";
+      roomElements.btnTogglePopupBlock.textContent = "⚠️ Pop-ups: OFF";
       showToast("Bloqueador de pop-ups DESATIVADO. ⚠️", "warning");
     }
   });
@@ -937,6 +1235,8 @@ function escapeHTML(str) {
 // START
 // ====================================================
 window.addEventListener("DOMContentLoaded", () => {
+  setupDockCollapse();
+  setupKeyboardProxy();
   checkInviteRoute();
   checkAuth();
 });
