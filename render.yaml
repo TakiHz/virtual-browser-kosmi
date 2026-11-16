@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: virtual-browser-kosmi
+    name: omniscient-watch
     env: node
     plan: free
     region: oregon
