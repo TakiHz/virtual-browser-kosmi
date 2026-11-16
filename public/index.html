@@ -157,117 +157,113 @@
 
   <!-- VIEW 3: SALA DO NAVEGADOR VIRTUAL -->
   <section id="view-room" class="view-screen">
-    <!-- BARRA SUPERIOR DA SALA -->
-    <header class="room-header">
-      <div class="room-nav-left">
-        <button id="btn-leave-room" class="btn-icon" title="Voltar ao Lobby">
-          <span>← Lobby</span>
-        </button>
-
-        <div class="room-code-tag">
-          <span class="label">SALA:</span>
-          <span class="code-value" id="room-code-display">------</span>
-          <span class="pass-divider">|</span>
-          <span class="label">🔑 SENHA:</span>
-          <span class="code-value highlight-pass" id="room-pass-display">------</span>
-          <button id="btn-copy-code" class="btn-copy-pill" title="Copiar a senha de convite da sala">
-            📋 Copiar Senha
-          </button>
-          <button id="btn-copy-link" class="btn-copy-pill highlight" title="Copiar o link completo de convite">
-            🔗 Copiar Convite
-          </button>
+    <!-- COLUNA DA ESQUERDA NO PC (100% ALTURA, NADA EM CIMA E NADA EM BAIXO) / TOPO NO CELULAR -->
+    <div class="browser-wrapper" id="browser-wrapper">
+      <div id="browser-mount">
+        <div class="browser-placeholder" id="browser-loading">
+          <div class="spinner"></div>
+          <p>Conectando ao Navegador Virtual Hyperbeam...</p>
         </div>
       </div>
 
-      <!-- BARRA DE NAVEGAÇÃO / TROCA DE VÍDEO HLS OU SITE -->
-      <form id="form-room-nav" class="room-nav-center">
-        <input type="text" id="input-room-nav-url" placeholder="Navegar para site ou colar stream .m3u8..." autocomplete="off" />
-        <button type="submit" class="btn-nav-go">Ir</button>
-      </form>
+      <!-- BOTÃO FLUTUANTE PARA REEXIBIR CONTROLES QUANDO OCULTADOS PELA SETA -->
+      <button id="btn-unhide-dock" class="btn-unhide-dock hidden" title="Mostrar barra de controles">
+        ▲ Controles
+      </button>
 
-      <div class="room-nav-right">
-        <button id="btn-delete-room" class="btn-delete-room hidden" title="Apagar e encerrar esta sala permanentemente">
-          🗑️ Apagar Sala
-        </button>
-        <div class="online-indicator">
-          <span class="live-dot"></span>
-          <span id="room-online-count">1 online</span>
+      <!-- BARRA FLUTUANTE DE DIGITAÇÃO MOBILE / PROXY DE TECLADO -->
+      <div id="mobile-typing-bar" class="mobile-typing-bar hidden">
+        <div class="typing-bar-inner">
+          <span class="typing-icon">⌨️</span>
+          <input type="text" id="mobile-keyboard-proxy" class="typing-input" placeholder="Digite aqui para o virtual..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          <button type="button" id="btn-send-typed-text" class="btn-typing-send" title="Enviar texto ao virtual">Enviar ↵</button>
+          <button type="button" id="btn-close-typing-bar" class="btn-typing-close" title="Fechar teclado">✕</button>
         </div>
-        <button id="btn-toggle-sidebar" class="btn-icon" title="Alternar Chat / Participantes">
-          💬 Chat
-        </button>
       </div>
-    </header>
+    </div>
 
-    <!-- ÁREA PRINCIPAL DA SALA -->
-    <div class="room-main-container">
-      <!-- O NAVEGADOR VIRTUAL RENDERIZADO VIA WEBRTC -->
-      <div class="browser-wrapper">
-        <div id="browser-mount">
-          <div class="browser-placeholder" id="browser-loading">
-            <div class="spinner"></div>
-            <p>Conectando ao Navegador Virtual Hyperbeam...</p>
-          </div>
-        </div>
-
-        <!-- DOCK DE CONTROLES FLUTUANTE INFERIOR (SLIM & COLAPSÁVEL) -->
-        <div class="room-dock slim" id="room-dock">
-          <!-- Indicador de controle -->
-          <div class="control-status" id="control-status-badge">
-            <span id="control-status-text">👀 Assistindo</span>
-          </div>
-
-          <!-- Ação de assumir controle -->
-          <button id="btn-toggle-control" class="btn-dock btn-dock-slim" title="Assumir ou liberar controle do navegador virtual">
-            🎮 Controle
-          </button>
-
-          <!-- Botão de Teclado Virtual (Mobile e Desktop) -->
-          <button id="btn-toggle-keyboard" class="btn-dock-icon" title="Abrir teclado para digitar no navegador virtual">
-            ⌨️
-          </button>
-
-          <!-- GRUPO COLAPSÁVEL: Opções secundárias (Volume e Pop-up Blocker) -->
-          <div class="dock-collapsible" id="dock-collapsible">
-            <div class="dock-divider"></div>
-
-            <!-- Bloqueador de Pop-ups Inteligente -->
-            <button id="btn-toggle-popup-block" class="btn-dock-pill btn-dock-pill-slim active" title="Clique para alternar o bloqueador de pop-ups">
-              🛡️ Pop-ups: ON
+    <!-- PAINEL DA DIREITA NO PC (TUDO À DIREITA) / LAYOUT INTEGRADO NO CELULAR -->
+    <div class="room-side-panel" id="room-side-panel">
+      <!-- 1. CABEÇALHO DA SALA -->
+      <header class="room-header" id="room-header">
+        <div class="room-nav-top-row">
+          <div class="room-nav-left">
+            <button id="btn-leave-room" class="btn-icon" title="Voltar ao Lobby">
+              <span>← Lobby</span>
             </button>
 
-            <!-- Volume -->
-            <div class="volume-control">
-              <button id="btn-mute" class="btn-dock-icon" title="Silenciar">🔊</button>
-              <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1" title="Volume" />
+            <div class="room-code-tag">
+              <span class="label">SALA:</span>
+              <span class="code-value" id="room-code-display">------</span>
+              <span class="pass-divider">|</span>
+              <span class="label">🔑 SENHA:</span>
+              <span class="code-value highlight-pass" id="room-pass-display">------</span>
+              <button id="btn-copy-code" class="btn-copy-pill" title="Copiar a senha de convite da sala">
+                📋 Copiar
+              </button>
+              <button id="btn-copy-link" class="btn-copy-pill highlight" title="Copiar o link completo de convite">
+                🔗 Convite
+              </button>
             </div>
           </div>
 
-          <!-- Separador Fixo -->
-          <div class="dock-divider"></div>
-
-          <!-- Tela Cheia -->
-          <button id="btn-fullscreen" class="btn-dock-icon" title="Tela Cheia">⛶</button>
-
-          <!-- Seta Para Baixo: Ocultar opções de volume e pop-up -->
-          <button id="btn-collapse-dock" class="btn-dock-icon btn-collapse" title="Ocultar opções de volume e pop-up">
-            <span class="collapse-arrow" id="collapse-arrow-icon">▼</span>
-          </button>
-        </div>
-
-        <!-- BARRA FLUTUANTE DE DIGITAÇÃO MOBILE / PROXY DE TECLADO -->
-        <div id="mobile-typing-bar" class="mobile-typing-bar hidden">
-          <div class="typing-bar-inner">
-            <span class="typing-icon">⌨️</span>
-            <input type="text" id="mobile-keyboard-proxy" class="typing-input" placeholder="Digite aqui para o virtual..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-            <button type="button" id="btn-send-typed-text" class="btn-typing-send" title="Enviar texto ao virtual">Enviar ↵</button>
-            <button type="button" id="btn-close-typing-bar" class="btn-typing-close" title="Fechar teclado">✕</button>
+          <div class="room-nav-right">
+            <button id="btn-delete-room" class="btn-delete-room hidden" title="Apagar e encerrar esta sala permanentemente">
+              🗑️ Apagar
+            </button>
+            <div class="online-indicator">
+              <span class="live-dot"></span>
+              <span id="room-online-count">1 online</span>
+            </div>
           </div>
         </div>
+
+        <!-- BARRA DE NAVEGAÇÃO / TROCA DE VÍDEO HLS OU SITE -->
+        <form id="form-room-nav" class="room-nav-center">
+          <input type="text" id="input-room-nav-url" placeholder="Navegar para site ou stream .m3u8..." autocomplete="off" />
+          <button type="submit" class="btn-nav-go">Ir</button>
+        </form>
+      </header>
+
+      <!-- 2. DOCK DE CONTROLES DO NAVEGADOR -->
+      <div class="room-dock slim" id="room-dock">
+        <!-- Indicador de controle -->
+        <div class="control-status" id="control-status-badge">
+          <span id="control-status-text">👀 Assistindo</span>
+        </div>
+
+        <!-- Ação de assumir controle -->
+        <button id="btn-toggle-control" class="btn-dock btn-dock-slim" title="Assumir ou liberar controle do navegador virtual">
+          🎮 Controle
+        </button>
+
+        <!-- Botão de Teclado Virtual (Mobile e Desktop) -->
+        <button id="btn-toggle-keyboard" class="btn-dock-icon" title="Abrir teclado para digitar no navegador virtual">
+          ⌨️
+        </button>
+
+        <!-- Bloqueador de Pop-ups Inteligente -->
+        <button id="btn-toggle-popup-block" class="btn-dock-pill btn-dock-pill-slim active" title="Clique para alternar o bloqueador de pop-ups">
+          🛡️ Pop-ups: ON
+        </button>
+
+        <!-- Volume -->
+        <div class="volume-control">
+          <button id="btn-mute" class="btn-dock-icon" title="Silenciar">🔊</button>
+          <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1" title="Volume" />
+        </div>
+
+        <!-- Tela Cheia -->
+        <button id="btn-fullscreen" class="btn-dock-icon" title="Tela Cheia">⛶</button>
+
+        <!-- Seta Para Baixo: Ocultar toda a barra de controles -->
+        <button id="btn-collapse-dock" class="btn-dock-icon btn-collapse" title="Ocultar toda a barra de controles">
+          <span class="collapse-arrow" id="collapse-arrow-icon">▼</span>
+        </button>
       </div>
 
-      <!-- PAINEL LATERAL (CHAT E PARTICIPANTES) -->
-      <aside class="room-sidebar collapsed" id="room-sidebar">
+      <!-- 3. CHAT E PARTICIPANTES (Abaixo do player no celular, na coluna da direita no PC) -->
+      <aside class="room-sidebar" id="room-sidebar">
         <div class="sidebar-header">
           <div class="sidebar-tabs">
             <button id="tab-chat" class="side-tab active">Chat</button>
@@ -279,11 +275,11 @@
         <div class="sidebar-content" id="sidebar-chat">
           <div class="chat-messages" id="chat-messages-box">
             <div class="chat-item system">
-              <span>Bem-vindo à sala compartilhada! Envie o link ou código para seus amigos.</span>
+              <span>Bem-vindo à sala! Envie o link ou senha para seus amigos.</span>
             </div>
           </div>
           <form id="form-chat" class="chat-input-form">
-            <input type="text" id="chat-input-text" placeholder="Digite uma mensagem..." autocomplete="off" maxlength="300" />
+            <input type="text" id="chat-input-text" placeholder="Aa Digite uma mensagem..." autocomplete="off" maxlength="300" />
             <button type="submit" class="btn-send">Enviar</button>
           </form>
         </div>

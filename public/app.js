@@ -63,6 +63,7 @@ const roomElements = {
   roomDock: document.getElementById("room-dock"),
   btnCollapseDock: document.getElementById("btn-collapse-dock"),
   collapseArrowIcon: document.getElementById("collapse-arrow-icon"),
+  btnUnhideDock: document.getElementById("btn-unhide-dock"),
   dockCollapsible: document.getElementById("dock-collapsible"),
   btnToggleKeyboard: document.getElementById("btn-toggle-keyboard"),
   mobileTypingBar: document.getElementById("mobile-typing-bar"),
@@ -992,33 +993,37 @@ function setupKeyboardProxy() {
 }
 
 // ====================================================
-// OCULTAR / COLAPSAR OPÇÕES COM SETA PARA BAIXO (SLIM)
+// OCULTAR / COLAPSAR BARRA DE CONTROLES COM SETA PARA BAIXO
 // ====================================================
 function setupDockCollapse() {
   const dock = roomElements.roomDock;
   const btnCollapse = roomElements.btnCollapseDock;
-  const arrowIcon = roomElements.collapseArrowIcon;
+  const btnUnhide = roomElements.btnUnhideDock;
 
-  if (!dock || !btnCollapse) return;
+  if (!dock) return;
 
-  const isCollapsed = localStorage.getItem("dock_collapsed") === "true";
-  if (isCollapsed) {
-    dock.classList.add("collapsed");
-    if (arrowIcon) arrowIcon.textContent = "▲";
-    btnCollapse.title = "Mostrar opções de volume e pop-up";
+  const isHidden = localStorage.getItem("dock_hidden") === "true";
+  if (isHidden) {
+    dock.classList.add("dock-hidden");
+    if (btnUnhide) btnUnhide.classList.remove("hidden");
   }
 
-  btnCollapse.addEventListener("click", () => {
-    dock.classList.toggle("collapsed");
-    const collapsed = dock.classList.contains("collapsed");
-    if (arrowIcon) {
-      arrowIcon.textContent = collapsed ? "▲" : "▼";
-    }
-    btnCollapse.title = collapsed
-      ? "Mostrar opções de volume e pop-up"
-      : "Ocultar opções de volume e pop-up";
-    localStorage.setItem("dock_collapsed", String(collapsed));
-  });
+  if (btnCollapse) {
+    btnCollapse.addEventListener("click", () => {
+      dock.classList.add("dock-hidden");
+      if (btnUnhide) btnUnhide.classList.remove("hidden");
+      localStorage.setItem("dock_hidden", "true");
+      showToast("Barra de controles ocultada. Clique em '▲ Controles' para reexibir.", "info");
+    });
+  }
+
+  if (btnUnhide) {
+    btnUnhide.addEventListener("click", () => {
+      dock.classList.remove("dock-hidden");
+      btnUnhide.classList.add("hidden");
+      localStorage.setItem("dock_hidden", "false");
+    });
+  }
 }
 
 function connectRoomWebSocket(code) {
@@ -1274,9 +1279,11 @@ roomElements.btnFullscreen.addEventListener("click", () => {
 // ====================================================
 // CHAT & SIDEBAR
 // ====================================================
-roomElements.btnToggleSidebar.addEventListener("click", () => {
-  roomElements.sidebar.classList.toggle("collapsed");
-});
+if (roomElements.btnToggleSidebar) {
+  roomElements.btnToggleSidebar.addEventListener("click", () => {
+    roomElements.sidebar.classList.toggle("collapsed");
+  });
+}
 
 roomElements.tabChat.addEventListener("click", () => {
   roomElements.tabChat.classList.add("active");
@@ -1302,10 +1309,36 @@ roomElements.formChat.addEventListener("submit", (e) => {
 });
 
 function appendChatMessage(msg) {
-  const item = document.createElement("div");
-  item.className = "chat-item";
-  item.innerHTML = `<span class="chat-author">${msg.user}:</span><span class="chat-body">${escapeHTML(msg.text)}</span>`;
-  roomElements.chatMessagesBox.appendChild(item);
+  const isMe = Boolean(
+    state.user &&
+    ((msg.userId && msg.userId === state.user.id) ||
+     (msg.user && state.user.nickname && msg.user.toLowerCase() === state.user.nickname.toLowerCase()))
+  );
+
+  const row = document.createElement("div");
+  row.className = `chat-bubble-row ${isMe ? "own" : "other"}`;
+
+  const senderName = escapeHTML(msg.user || "Anônimo");
+  const firstLetter = (msg.user ? msg.user.charAt(0).toUpperCase() : "?");
+  const textHtml = escapeHTML(msg.text);
+
+  if (isMe) {
+    row.innerHTML = `
+      <div class="chat-bubble-body">
+        <div class="chat-bubble own-bubble">${textHtml}</div>
+      </div>
+    `;
+  } else {
+    row.innerHTML = `
+      <div class="chat-bubble-avatar">${firstLetter}</div>
+      <div class="chat-bubble-body">
+        <span class="chat-sender-name">${senderName}</span>
+        <div class="chat-bubble other-bubble">${textHtml}</div>
+      </div>
+    `;
+  }
+
+  roomElements.chatMessagesBox.appendChild(row);
   roomElements.chatMessagesBox.scrollTop = roomElements.chatMessagesBox.scrollHeight;
 }
 
