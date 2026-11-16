@@ -9,6 +9,7 @@ const state = {
   hbInstance: null,
   ws: null,
   isControlling: false,
+  blockPopups: true, // Bloqueio ativo de pop-ups e abas invasivas
 };
 
 // ELEMENTOS DOM
@@ -53,6 +54,7 @@ const roomElements = {
   controlStatusBadge: document.getElementById("control-status-badge"),
   controlStatusText: document.getElementById("control-status-text"),
   btnToggleControl: document.getElementById("btn-toggle-control"),
+  btnTogglePopupBlock: document.getElementById("btn-toggle-popup-block"),
   btnMute: document.getElementById("btn-mute"),
   volumeSlider: document.getElementById("volume-slider"),
   btnFullscreen: document.getElementById("btn-fullscreen"),
@@ -415,10 +417,47 @@ async function mountHyperbeam(embedUrl) {
       },
     });
 
+    // Ativa o protetor anti-popup inteligente na sessão
+    setupAntiPopupGuard(state.hbInstance);
+
     showToast("Navegador virtual carregado com sucesso!", "success");
   } catch (err) {
     console.error("Erro ao inicializar Hyperbeam:", err);
     showToast("Erro ao conectar no stream do Hyperbeam: " + err.message, "error");
+  }
+}
+
+// ====================================================
+// GUARDA ANTI-POPUP E CONTROLE DE ABAS EXTRAS
+// ====================================================
+function setupAntiPopupGuard(hb) {
+  if (!hb || !hb.tabs) return;
+
+  try {
+    hb.tabs.onCreated.addListener(async (tab) => {
+      if (!state.blockPopups) return;
+
+      try {
+        const tabs = await hb.tabs.query({});
+        if (tabs && tabs.length > 1) {
+          const mainTab = tabs[0];
+          // Se for uma aba secundária aberta por script/anúncio/popup
+          if (tab.id !== mainTab.id) {
+            console.log(`[Anti-Popup] Fechando pop-up/aba secundária indesejada: ${tab.id}`);
+            await hb.tabs.remove(tab.id);
+            if (mainTab && mainTab.id) {
+              await hb.tabs.update(mainTab.id, { active: true });
+            }
+            showToast("Pop-up ou anúncio bloqueado! 🛡️", "info");
+          }
+        }
+      } catch (err) {
+        console.warn("[Anti-Popup error]:", err.message);
+      }
+    });
+    console.log("🛡️ Anti-Popup Guard ativo no navegador virtual.");
+  } catch (err) {
+    console.warn("Não foi possível registrar o listener de abas do Hyperbeam:", err);
   }
 }
 
@@ -618,6 +657,22 @@ roomElements.btnMute.addEventListener("click", () => {
     roomElements.btnMute.textContent = "🔊";
   }
 });
+
+// ALTERNAR BLOQUEADOR DE POP-UPS
+if (roomElements.btnTogglePopupBlock) {
+  roomElements.btnTogglePopupBlock.addEventListener("click", () => {
+    state.blockPopups = !state.blockPopups;
+    if (state.blockPopups) {
+      roomElements.btnTogglePopupBlock.className = "btn-dock-pill active";
+      roomElements.btnTogglePopupBlock.textContent = "🛡️ Pop-ups: Bloqueados";
+      showToast("Bloqueador de pop-ups ATIVADO! 🛡️", "success");
+    } else {
+      roomElements.btnTogglePopupBlock.className = "btn-dock-pill disabled";
+      roomElements.btnTogglePopupBlock.textContent = "⚠️ Pop-ups: Permitidos";
+      showToast("Bloqueador de pop-ups DESATIVADO. ⚠️", "warning");
+    }
+  });
+}
 
 roomElements.btnFullscreen.addEventListener("click", () => {
   const wrapper = document.querySelector(".browser-wrapper");

@@ -153,6 +153,7 @@ async function requestHyperbeamVM(startUrl = "https://www.youtube.com") {
     body: JSON.stringify({
       start_url: startUrl,
       kiosk: false,
+      ublock: true, // Bloqueio nativo de anúncios, pop-ups invasivos e scripts maliciosos (uBlock Origin)
       timeout: {
         offline: 300, // Desliga 5 minutos após o último sair para economizar recursos
         warning: 60,
