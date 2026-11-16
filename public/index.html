@@ -119,12 +119,12 @@
           <div class="card-badge">Já tem a senha?</div>
           <div class="card-icon">🔑</div>
           <h3>Entrar com Senha de Convite</h3>
-          <p>A senha de cada sala é o seu código de convite (ex: TUMMJS). Digite a senha ou cole o link recebido.</p>
+          <p>Digite a senha de convite da sala (6 dígitos) ou cole o link recebido do anfitrião.</p>
           
           <form id="form-join-room" class="card-form">
             <div class="field-group">
               <label for="join-room-code">Senha de Convite / Código da Sala</label>
-              <input type="text" id="join-room-code" placeholder="Ex: TUMMJS ou cole o link aqui..." maxlength="500" required class="input-code" autocomplete="off" />
+              <input type="text" id="join-room-code" placeholder="Digite a senha ou link aqui..." maxlength="500" required class="input-code" autocomplete="off" />
             </div>
             <button type="submit" class="btn-secondary" id="btn-join-room">
               <span>🔓 Entrar com Senha</span>
@@ -315,12 +315,12 @@
       <button id="modal-close-btn" class="modal-close" type="button" title="Fechar">✕</button>
       <div class="modal-icon">🔒</div>
       <h3 id="modal-room-title">Sala Protegida</h3>
-      <p id="modal-room-desc">Para acessar esta sala, digite a <strong>senha de convite</strong> (ex: TUMMJS):</p>
+      <p id="modal-room-desc">Para acessar esta sala, digite a <strong>senha de convite</strong> (6 caracteres):</p>
 
       <form id="form-modal-password" class="card-form">
         <div class="field-group">
           <label for="input-modal-password">Senha de Convite / Código</label>
-          <input type="text" id="input-modal-password" placeholder="Ex: TUMMJS ou link completo" required class="input-code" autocomplete="off" />
+          <input type="text" id="input-modal-password" placeholder="Digite a senha ou link..." required class="input-code" autocomplete="off" />
         </div>
         <div class="modal-btn-row">
           <button type="button" id="btn-modal-cancel" class="btn-secondary">Cancelar</button>

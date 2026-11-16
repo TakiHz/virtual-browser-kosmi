@@ -213,14 +213,17 @@ async function checkAuth() {
       const data = await res.json();
       state.user = data.user;
       onAuthSuccess();
-    } else {
-      // Token expirou
+    } else if (res.status === 401) {
+      // Somente remove do localStorage se o servidor rejeitar explicitamente
       localStorage.removeItem("hb_token");
       state.token = null;
       showScreen("auth");
+    } else {
+      showScreen("auth");
     }
   } catch (err) {
-    console.error("Erro na verificação de auth:", err);
+    console.warn("Aviso de rede na verificação de auth:", err.message);
+    // Erro transitório de rede: preserva o token para não deslogar o usuário
     showScreen("auth");
   }
 }
@@ -249,8 +252,8 @@ let targetedRoomForModal = null;
 
 function openPasswordModal(room) {
   targetedRoomForModal = room;
-  modalElements.roomTitle.textContent = `Sala de ${room.hostNickname}`;
-  modalElements.roomDesc.innerHTML = `Para entrar, insira a <strong>senha de convite</strong> da sala (ex: <code>${room.code}</code>):`;
+  modalElements.roomTitle.textContent = `Sala de ${escapeHTML(room.hostNickname)}`;
+  modalElements.roomDesc.innerHTML = `Para acessar esta sala, digite a <strong>senha de convite</strong> (6 caracteres) fornecida pelo anfitrião:`;
   modalElements.inputPassword.value = "";
   modalElements.overlay.classList.remove("hidden");
   setTimeout(() => modalElements.inputPassword.focus(), 50);
@@ -276,11 +279,17 @@ if (modalElements.form) {
     e.preventDefault();
     const pass = extractRoomCode(modalElements.inputPassword.value);
     if (!pass) {
-      showToast("Por favor, digite a senha de convite da sala (ex: TUMMJS).", "error");
+      showToast("Por favor, digite a senha de convite de 6 caracteres.", "error");
       return;
     }
+    // Confere se a senha digitada confere com a sala selecionada
+    if (targetedRoomForModal && pass.toUpperCase() !== targetedRoomForModal.code.toUpperCase()) {
+      showToast("Senha de convite incorreta para esta sala. Solicite ao anfitrião.", "error");
+      return;
+    }
+    const targetCode = targetedRoomForModal ? targetedRoomForModal.code : pass;
     closePasswordModal();
-    joinRoom(pass);
+    joinRoom(targetCode);
   });
 }
 
@@ -388,16 +397,13 @@ async function loadRoomsList() {
           ${
             isOwner
               ? `<span class="pass-code">${r.code}</span>`
-              : `<span class="pass-hint">Senha necessária (ex: ${r.code})</span>`
+              : `<span class="pass-hint">🔒 Senha privada requerida</span>`
           }
         </div>
 
         <div class="room-card-actions">
           <button class="btn-card-enter" type="button">
             ${isOwner ? "Entrar Direto →" : "🔑 Inserir Senha e Entrar"}
-          </button>
-          <button class="btn-card-copy" type="button" title="Copiar Senha de Convite">
-            📋 Copiar Senha
           </button>
           ${
             isOwner
@@ -407,20 +413,12 @@ async function loadRoomsList() {
         </div>
       `;
 
-      // Botão Entrar
+      // Botão Entrar / Inserir Senha
       card.querySelector(".btn-card-enter").addEventListener("click", () => {
         if (isOwner) {
           joinRoom(r.code);
         } else {
           openPasswordModal(r);
-        }
-      });
-
-      // Botão Copiar Senha
-      card.querySelector(".btn-card-copy").addEventListener("click", async () => {
-        const ok = await copyToClipboard(r.code);
-        if (ok) {
-          showToast(`Senha de convite (${r.code}) copiada!`, "success");
         }
       });
 
@@ -574,11 +572,19 @@ authElements.formLogin.addEventListener("submit", async (e) => {
 });
 
 // LOGOUT
-lobbyElements.btnLogout.addEventListener("click", () => {
+lobbyElements.btnLogout.addEventListener("click", async () => {
+  try {
+    if (state.token) {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${state.token}` },
+      });
+    }
+  } catch (e) {}
   localStorage.removeItem("hb_token");
   state.token = null;
   state.user = null;
-  showToast("Sessão encerrada.", "info");
+  showToast("Sessão encerrada com sucesso.", "info");
   showScreen("auth");
 });
 

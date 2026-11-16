@@ -11,6 +11,7 @@ const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 const ROOMS_FILE = path.join(DATA_DIR, "rooms.json");
+const SESSIONS_FILE = path.join(DATA_DIR, "sessions.json");
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -36,10 +37,10 @@ function saveJSON(file, data) {
   }
 }
 
-// In-memory cache
+// In-memory cache com persistência local em disco
 const localUsers = new Map(Object.entries(loadJSON(USERS_FILE, {})));
 const localRooms = new Map(Object.entries(loadJSON(ROOMS_FILE, {})));
-const sessions = new Map(); // token -> user object
+const sessions = new Map(Object.entries(loadJSON(SESSIONS_FILE, {})));
 
 let pool = null;
 
@@ -75,8 +76,23 @@ export async function initDatabase() {
         admin_token TEXT NOT NULL,
         created_at BIGINT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        nickname TEXT NOT NULL,
+        created_at BIGINT NOT NULL
+      );
     `);
-    console.log("✅ Tabelas permanentes 'users' e 'rooms' verificadas no PostgreSQL.");
+    console.log("✅ Tabelas permanentes 'users', 'rooms' e 'sessions' verificadas no PostgreSQL.");
+
+    // Restaura sessões ativas do banco
+    const sessRes = await pool.query("SELECT * FROM sessions");
+    for (const row of sessRes.rows) {
+      sessions.set(row.token, { id: row.user_id, nickname: row.nickname });
+    }
+    if (sessRes.rows.length > 0) {
+      console.log(`🔑 ${sessRes.rows.length} sessões de login restauradas com sucesso do PostgreSQL.`);
+    }
   } catch (err) {
     console.error("❌ Erro ao criar tabelas no PostgreSQL:", err.message);
   }
@@ -84,6 +100,10 @@ export async function initDatabase() {
 
 function saveLocalUsers() {
   saveJSON(USERS_FILE, Object.fromEntries(localUsers));
+}
+
+function saveLocalSessions() {
+  saveJSON(SESSIONS_FILE, Object.fromEntries(sessions));
 }
 
 function saveLocalRooms() {
@@ -151,6 +171,18 @@ export async function registerUser(nickname, password) {
   const token = crypto.randomBytes(32).toString("hex");
   const userObj = { id, nickname: nickname.trim() };
   sessions.set(token, userObj);
+  saveLocalSessions();
+
+  if (pool) {
+    try {
+      await pool.query(
+        "INSERT INTO sessions (token, user_id, nickname, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+        [token, id, userObj.nickname, now]
+      );
+    } catch (e) {
+      console.warn("Aviso ao salvar sessão no banco:", e.message);
+    }
+  }
 
   return { token, user: userObj };
 }
@@ -183,6 +215,18 @@ export async function loginUser(nickname, password) {
   const token = crypto.randomBytes(32).toString("hex");
   const userObj = { id: user.id, nickname: user.nickname };
   sessions.set(token, userObj);
+  saveLocalSessions();
+
+  if (pool) {
+    try {
+      await pool.query(
+        "INSERT INTO sessions (token, user_id, nickname, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+        [token, user.id, userObj.nickname, Date.now()]
+      );
+    } catch (e) {
+      console.warn("Aviso ao salvar sessão no banco:", e.message);
+    }
+  }
 
   return { token, user: userObj };
 }
@@ -190,6 +234,20 @@ export async function loginUser(nickname, password) {
 export function getUserByToken(token) {
   if (!token) return null;
   return sessions.get(token) || null;
+}
+
+export async function destroySession(token) {
+  if (!token) return;
+  sessions.delete(token);
+  saveLocalSessions();
+
+  if (pool) {
+    try {
+      await pool.query("DELETE FROM sessions WHERE token = $1", [token]);
+    } catch (e) {
+      console.warn("Aviso ao remover sessão do banco:", e.message);
+    }
+  }
 }
 
 export async function createRoomStore(code, data) {

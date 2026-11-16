@@ -17,6 +17,7 @@ import {
   getAllRooms,
   getRecentActiveRooms,
   deleteRoom,
+  destroySession,
 } from "./store.js";
 
 dotenv.config();
@@ -128,6 +129,16 @@ app.get("/api/auth/me", authMiddleware, (req, res) => {
     success: true,
     user: { id: req.user.id, nickname: req.user.nickname },
   });
+});
+
+// Logout explícito
+app.post("/api/auth/logout", authMiddleware, async (req, res) => {
+  try {
+    await destroySession(req.token);
+    res.json({ success: true, message: "Sessão encerrada com sucesso." });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // ----------------------------------------------------
