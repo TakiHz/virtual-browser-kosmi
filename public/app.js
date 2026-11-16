@@ -339,6 +339,45 @@ async function deleteRoomApi(code) {
   }
 }
 
+function updateOwnRoomStatus(ownRoom) {
+  const ownNotice = document.getElementById("own-room-notice");
+  const ownCodeTag = document.getElementById("own-room-code-tag");
+  const btnGoOwn = document.getElementById("btn-go-own-room");
+  const btnDelOwn = document.getElementById("btn-del-own-room");
+
+  if (ownRoom) {
+    if (ownNotice) ownNotice.classList.remove("hidden");
+    if (ownCodeTag) ownCodeTag.textContent = ownRoom.code;
+    if (lobbyElements.btnCreateRoom) {
+      lobbyElements.btnCreateRoom.disabled = true;
+      lobbyElements.btnCreateRoom.classList.add("disabled");
+    }
+    if (lobbyElements.btnCreateText) {
+      lobbyElements.btnCreateText.textContent = "Limite Atingido (1 Sala por Conta)";
+    }
+
+    if (btnGoOwn) {
+      btnGoOwn.onclick = () => joinRoom(ownRoom.code);
+    }
+    if (btnDelOwn) {
+      btnDelOwn.onclick = async () => {
+        const ok = confirm(`Deseja realmente apagar sua sala "${ownRoom.code}" para poder criar uma nova?`);
+        if (!ok) return;
+        await deleteRoomApi(ownRoom.code);
+      };
+    }
+  } else {
+    if (ownNotice) ownNotice.classList.add("hidden");
+    if (lobbyElements.btnCreateRoom && !lobbyElements.btnCreateText?.textContent?.includes("Cooldown")) {
+      lobbyElements.btnCreateRoom.disabled = false;
+      lobbyElements.btnCreateRoom.classList.remove("disabled");
+    }
+    if (lobbyElements.btnCreateText && !lobbyElements.btnCreateText?.textContent?.includes("Cooldown")) {
+      lobbyElements.btnCreateText.textContent = "Criar Sala Virtual";
+    }
+  }
+}
+
 async function loadRoomsList() {
   if (!state.token || !lobbyElements.roomsListGrid) return;
 
@@ -352,6 +391,15 @@ async function loadRoomsList() {
     const rooms = data.rooms || [];
 
     lobbyElements.roomsListGrid.innerHTML = "";
+
+    // Verifica se o usuário logado já possui uma sala ativa
+    const ownRoom = rooms.find(
+      (r) =>
+        state.user &&
+        r.hostNickname &&
+        r.hostNickname.toLowerCase() === state.user.nickname.toLowerCase()
+    );
+    updateOwnRoomStatus(ownRoom);
 
     if (rooms.length === 0) {
       lobbyElements.roomsEmptyState.classList.remove("hidden");
@@ -619,6 +667,11 @@ lobbyElements.formCreate.addEventListener("submit", async (e) => {
   } catch (err) {
     showToast(err.message, "error");
 
+    // Se o erro foi limite de sala por conta atingido, atualiza a lista de salas
+    if (err.message.includes("já possui uma sala ativa") || err.message.includes("1 sala")) {
+      loadRoomsList();
+    }
+
     // Se bater no limite de taxa temporário, atualiza as salas disponíveis e inicia cooldown visível
     if (err.message.includes("Limite temporário") || err.message.includes("429")) {
       loadRoomsList();
@@ -637,7 +690,10 @@ lobbyElements.formCreate.addEventListener("submit", async (e) => {
       return;
     }
   } finally {
-    if (!lobbyElements.btnCreateRoom.textContent.includes("Cooldown")) {
+    if (
+      !lobbyElements.btnCreateRoom.textContent.includes("Cooldown") &&
+      !lobbyElements.btnCreateRoom.textContent.includes("Limite Atingido")
+    ) {
       lobbyElements.btnCreateRoom.disabled = false;
       lobbyElements.btnCreateText.textContent = "Criar Sala Virtual";
     }

@@ -327,6 +327,49 @@ export async function getRoom(code) {
   return null;
 }
 
+export async function getRoomByHostNickname(nickname) {
+  if (!nickname) return null;
+  const nickLower = String(nickname).trim().toLowerCase();
+
+  // 1. Procura no cache de salas ativas
+  for (const room of localRooms.values()) {
+    if (room.hostNickname && room.hostNickname.trim().toLowerCase() === nickLower) {
+      return room;
+    }
+  }
+
+  // 2. Se não achar no cache mas o PostgreSQL estiver conectado
+  if (pool) {
+    try {
+      const res = await pool.query(
+        "SELECT * FROM rooms WHERE LOWER(TRIM(host_nickname)) = $1 ORDER BY created_at DESC LIMIT 1",
+        [nickLower]
+      );
+      if (res.rows.length > 0) {
+        const row = res.rows[0];
+        const room = {
+          code: row.code,
+          hostNickname: row.host_nickname,
+          sessionId: row.session_id,
+          embedUrl: row.embed_url,
+          adminToken: row.admin_token,
+          createdAt: Number(row.created_at),
+          emptySince: Number(row.created_at),
+          currentController: null,
+          controllerName: null,
+          clients: new Set(),
+        };
+        localRooms.set(row.code, room);
+        return room;
+      }
+    } catch (err) {
+      console.error("Erro ao buscar sala por host no PostgreSQL:", err.message);
+    }
+  }
+
+  return null;
+}
+
 export function getAllRooms() {
   return localRooms;
 }

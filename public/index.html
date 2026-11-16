@@ -108,6 +108,22 @@
               <label for="create-start-url">URL Inicial (Site, YouTube ou .m3u8)</label>
               <input type="text" id="create-start-url" value="https://www.youtube.com" placeholder="Cole link do YouTube, site ou .m3u8..." />
             </div>
+
+            <!-- AVISO DE LIMITE DE 1 SALA POR CONTA -->
+            <div id="own-room-notice" class="own-room-notice hidden">
+              <div class="own-notice-top">
+                <span class="own-notice-icon">⚠️</span>
+                <span class="own-notice-title">Limite de 1 sala atingido</span>
+              </div>
+              <p class="own-notice-desc">
+                Sua conta já possui a sala ativa <strong id="own-room-code-tag">------</strong>. Encerre-a antes de criar outra.
+              </p>
+              <div class="own-notice-actions">
+                <button type="button" id="btn-go-own-room" class="btn-notice-go">Ir para Minha Sala →</button>
+                <button type="button" id="btn-del-own-room" class="btn-notice-del">🗑️ Apagar Sala</button>
+              </div>
+            </div>
+
             <button type="submit" class="btn-primary" id="btn-create-room">
               <span id="btn-create-text">Criar Sala Virtual</span>
             </button>

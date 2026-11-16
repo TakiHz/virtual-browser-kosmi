@@ -14,6 +14,7 @@ import {
   getUserByToken,
   createRoomStore,
   getRoom,
+  getRoomByHostNickname,
   getAllRooms,
   getRecentActiveRooms,
   deleteRoom,
@@ -205,6 +206,16 @@ app.post("/api/rooms", authMiddleware, async (req, res) => {
   try {
     let { startUrl } = req.body || {};
     startUrl = startUrl?.trim() || "https://www.youtube.com";
+
+    // REGRA: Limite estrito de apenas 1 sala ativa por conta
+    const existingRoom = await getRoomByHostNickname(req.user.nickname);
+    if (existingRoom) {
+      return res.status(400).json({
+        success: false,
+        error: `Você já possui uma sala ativa (${existingRoom.code}). Cada conta tem permissão para apenas 1 sala por vez. Encerre ou apague sua sala anterior para criar uma nova.`,
+        existingCode: existingRoom.code,
+      });
+    }
 
     // Se for um link de streaming HLS (.m3u8), envelopa com o player HTML5 interno com hls.js
     if (startUrl.toLowerCase().includes(".m3u8")) {
