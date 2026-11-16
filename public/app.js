@@ -69,6 +69,7 @@ const roomElements = {
   mobileKeyboardProxy: document.getElementById("mobile-keyboard-proxy"),
   btnSendTypedText: document.getElementById("btn-send-typed-text"),
   btnCloseTypingBar: document.getElementById("btn-close-typing-bar"),
+  btnDeleteRoom: document.getElementById("btn-delete-room"),
   displayCode: document.getElementById("room-code-display"),
   passDisplay: document.getElementById("room-pass-display"),
   btnCopyCode: document.getElementById("btn-copy-code"),
@@ -287,6 +288,44 @@ if (lobbyElements.btnRefreshRooms) {
   });
 }
 
+// ====================================================
+// APAGAR / ENCERRAR SALA VIA API
+// ====================================================
+async function deleteRoomApi(code) {
+  if (!code || !state.token) return;
+
+  try {
+    const res = await fetch(`/api/rooms/${code}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${state.token}` },
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Erro ao apagar sala.");
+
+    showToast(`Sala ${code} apagada com sucesso! 🗑️`, "success");
+
+    // Se estivermos dentro da sala apagada, encerra WebRTC/WebSocket e volta ao lobby
+    if (state.currentRoom && state.currentRoom.code === code) {
+      if (state.ws) {
+        state.ws.close();
+        state.ws = null;
+      }
+      if (state.hbInstance) {
+        state.hbInstance.destroy?.();
+        state.hbInstance = null;
+      }
+      state.currentRoom = null;
+      window.history.pushState({}, "", "/");
+      showScreen("lobby");
+    }
+
+    loadRoomsList();
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+}
+
 async function loadRoomsList() {
   if (!state.token || !lobbyElements.roomsListGrid) return;
 
@@ -348,6 +387,11 @@ async function loadRoomsList() {
           <button class="btn-card-copy" type="button" title="Copiar Senha de Convite">
             📋 Copiar Senha
           </button>
+          ${
+            isOwner
+              ? `<button class="btn-card-delete" type="button" title="Apagar e encerrar esta sala">🗑️ Apagar</button>`
+              : ""
+          }
         </div>
       `;
 
@@ -367,6 +411,19 @@ async function loadRoomsList() {
           showToast(`Senha de convite (${r.code}) copiada!`, "success");
         }
       });
+
+      // Botão Apagar Sala (Aparece se for dono da sala)
+      const btnDelete = card.querySelector(".btn-card-delete");
+      if (btnDelete) {
+        btnDelete.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const confirmDel = confirm(
+            `Tem certeza que deseja apagar a sala "${r.code}"?\n\nEla será encerrada para todos os participantes.`
+          );
+          if (!confirmDel) return;
+          await deleteRoomApi(r.code);
+        });
+      }
 
       lobbyElements.roomsListGrid.appendChild(card);
     });
@@ -569,6 +626,20 @@ async function joinRoom(rawCode) {
     if (!res.ok) throw new Error(room.error || "Sala não encontrada ou encerrada.");
 
     state.currentRoom = room;
+
+    // Se o usuário atual for o criador da sala, exibe o botão de apagar sala
+    const isOwner =
+      state.user &&
+      room.hostNickname &&
+      room.hostNickname.toLowerCase() === state.user.nickname.toLowerCase();
+
+    if (roomElements.btnDeleteRoom) {
+      if (isOwner) {
+        roomElements.btnDeleteRoom.classList.remove("hidden");
+      } else {
+        roomElements.btnDeleteRoom.classList.add("hidden");
+      }
+    }
 
     // Atualiza a URL sem recarregar a página garantindo o código correto
     window.history.pushState({}, "", `/room/${room.code}`);
@@ -977,6 +1048,18 @@ function connectRoomWebSocket(code) {
           appendSystemMessage(data.text);
           break;
 
+        case "room_deleted":
+          showToast(data.message || "Esta sala foi encerrada e apagada.", "warning");
+          if (state.hbInstance) {
+            state.hbInstance.destroy?.();
+            state.hbInstance = null;
+          }
+          state.currentRoom = null;
+          window.history.pushState({}, "", "/");
+          showScreen("lobby");
+          loadRoomsList();
+          break;
+
         case "error":
           showToast(data.message, "error");
           break;
@@ -1087,6 +1170,19 @@ roomElements.btnLeave.addEventListener("click", () => {
   loadRoomsList();
   showScreen("lobby");
 });
+
+// APAGAR / ENCERRAR SALA (Apenas para o criador da sala)
+if (roomElements.btnDeleteRoom) {
+  roomElements.btnDeleteRoom.addEventListener("click", async () => {
+    if (!state.currentRoom) return;
+    const confirmDel = confirm(
+      `Tem certeza que deseja apagar a sala "${state.currentRoom.code}"?\n\nA máquina virtual será desligada e a sala encerrada permanentemente.`
+    );
+    if (!confirmDel) return;
+
+    await deleteRoomApi(state.currentRoom.code);
+  });
+}
 
 // NAVEGAR / REPRODUZIR STREAM HLS (.m3u8) DENTRO DA SALA
 if (roomElements.formNav) {

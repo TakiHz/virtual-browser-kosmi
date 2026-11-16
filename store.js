@@ -299,3 +299,24 @@ export async function getRecentActiveRooms(limit = 12) {
       onlineCount: r.clients ? r.clients.size : 0,
     }));
 }
+
+export async function deleteRoom(code) {
+  if (!code) return false;
+  const codeUpper = String(code).trim().replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (!codeUpper) return false;
+
+  const room = localRooms.get(codeUpper);
+  localRooms.delete(codeUpper);
+  saveLocalRooms();
+
+  if (pool) {
+    try {
+      await pool.query("DELETE FROM rooms WHERE UPPER(TRIM(code)) = $1", [codeUpper]);
+      console.log(`🗑️ Sala ${codeUpper} excluída com sucesso do PostgreSQL.`);
+    } catch (err) {
+      console.error(`Erro ao deletar sala ${codeUpper} do banco:`, err.message);
+    }
+  }
+
+  return room || true;
+}

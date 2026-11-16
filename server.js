@@ -15,6 +15,7 @@ import {
   getRoom,
   getAllRooms,
   getRecentActiveRooms,
+  deleteRoom,
 } from "./store.js";
 
 dotenv.config();
@@ -291,6 +292,76 @@ app.get("/api/rooms-recent", authMiddleware, async (req, res) => {
     const rooms = await getRecentActiveRooms(12);
     res.json({ success: true, rooms });
   } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Apagar / Encerrar Sala
+app.delete("/api/rooms/:code", authMiddleware, async (req, res) => {
+  try {
+    const rawCode = req.params.code;
+    const code = sanitizeRoomCode(rawCode);
+    if (!code) {
+      return res.status(400).json({ success: false, error: "Código da sala não fornecido." });
+    }
+
+    const room = await getRoom(code);
+    if (!room) {
+      return res.status(404).json({ success: false, error: "Sala não encontrada ou já encerrada." });
+    }
+
+    const isHost =
+      room.hostNickname &&
+      req.user &&
+      room.hostNickname.toLowerCase() === req.user.nickname.toLowerCase();
+
+    if (!isHost && room.hostNickname) {
+      return res.status(403).json({
+        success: false,
+        error: `Apenas o criador da sala (${room.hostNickname}) pode apagá-la.`,
+      });
+    }
+
+    // 1. Tentar encerrar a VM no Hyperbeam para liberar cota imediatamente
+    if (room.sessionId && HYPERBEAM_API_KEY) {
+      try {
+        await fetch(`https://engine.hyperbeam.com/v0/vm/${room.sessionId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${HYPERBEAM_API_KEY}` },
+        });
+        console.log(`[Hyperbeam VM Encerrada]: Session ${room.sessionId}`);
+      } catch (hbErr) {
+        console.warn("[Hyperbeam VM Delete Warning]:", hbErr.message);
+      }
+    }
+
+    // 2. Notificar usuários conectados via WebSocket
+    if (room.clients && room.clients.size > 0) {
+      broadcastMessage(room, {
+        type: "room_deleted",
+        message: "Esta sala foi encerrada e apagada pelo anfitrião.",
+      });
+
+      for (const client of room.clients) {
+        try {
+          client.ws.close();
+        } catch (e) {}
+      }
+      room.clients.clear();
+    }
+
+    // 3. Deletar do banco / memória
+    await deleteRoom(code);
+
+    console.log(`[Sala Apagada]: Código ${code} por ${req.user.nickname}`);
+
+    res.json({
+      success: true,
+      message: `Sala ${code} apagada com sucesso.`,
+      code,
+    });
+  } catch (err) {
+    console.error("[Erro ao apagar sala]:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
