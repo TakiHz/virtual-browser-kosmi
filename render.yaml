@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: virtual-browser-kosmi
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HYPERBEAM_API_KEY
+        sync: false
