@@ -753,7 +753,9 @@ function setupMobileTouchAndGestures() {
   let lastTwoFingerCenterY = null;
 
   function getNormalizedCoords(touch) {
-    const rect = mount.getBoundingClientRect();
+    // Busca elemento de vídeo/canvas interno do Hyperbeam para precisão exata
+    const target = mount.querySelector("video") || mount.querySelector("canvas") || mount;
+    const rect = target.getBoundingClientRect();
     if (!rect.width || !rect.height) return { x: 0.5, y: 0.5 };
     const rawX = touch.clientX - rect.left;
     const rawY = touch.clientY - rect.top;
@@ -799,7 +801,7 @@ function setupMobileTouchAndGestures() {
     if (e.touches.length === 1) {
       const touch = e.touches[0];
       const dist = Math.hypot(touch.clientX - touchStartX, touch.clientY - touchStartY);
-      if (dist > 3) {
+      if (dist > 8) {
         isMoving = true;
       }
       const coords = getNormalizedCoords(touch);
@@ -812,6 +814,7 @@ function setupMobileTouchAndGestures() {
       } catch (err) {
         console.warn("Touchmove sendEvent error:", err);
       }
+      if (e.cancelable) e.preventDefault();
     } else if (e.touches.length === 2) {
       // Rolagem com 2 dedos (scroll wheel)
       const currentCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
@@ -843,10 +846,13 @@ function setupMobileTouchAndGestures() {
       return;
     }
 
-    if (e.changedTouches.length === 1 && !isMoving) {
+    if (e.changedTouches.length === 1) {
+      const touch = e.changedTouches[0];
+      const dist = Math.hypot(touch.clientX - touchStartX, touch.clientY - touchStartY);
       const duration = Date.now() - touchStartTime;
-      if (duration < 450) {
-        const touch = e.changedTouches[0];
+
+      // Se soltou em menos de 450ms e o arrasto foi mínimo (< 14px), considera TAP CLICK direto e preciso
+      if (dist < 14 && duration < 450) {
         const coords = getNormalizedCoords(touch);
         try {
           state.hbInstance.sendEvent({

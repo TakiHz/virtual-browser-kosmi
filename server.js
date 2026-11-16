@@ -1,6 +1,7 @@
 import express from "express";
 import http from "node:http";
 import path from "node:path";
+import fs from "node:fs";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
@@ -35,9 +36,15 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 // Servir o SDK do Hyperbeam compilado como ES Module nativo
-app.get("/hyperbeam.js", (req, res) => {
-  const filePath = path.resolve(__dirname, "node_modules", "@hyperbeam", "web", "dist", "index.js");
-  res.sendFile(filePath, { headers: { "Content-Type": "application/javascript; charset=utf-8" } });
+app.get("/hyperbeam.js", async (req, res) => {
+  try {
+    const filePath = path.resolve(__dirname, "node_modules", "@hyperbeam", "web", "dist", "index.js");
+    const content = await fs.promises.readFile(filePath, "utf-8");
+    res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+    res.send(content);
+  } catch (err) {
+    res.status(500).send("// Error loading hyperbeam SDK: " + err.message);
+  }
 });
 
 // Middleware de Autenticação
@@ -351,6 +358,10 @@ app.delete("/api/rooms/:code", authMiddleware, async (req, res) => {
     }
 
     // 3. Deletar do banco / memória
+    if (emptyRoomTimers.has(code)) {
+      clearTimeout(emptyRoomTimers.get(code));
+      emptyRoomTimers.delete(code);
+    }
     await deleteRoom(code);
 
     console.log(`[Sala Apagada]: Código ${code} por ${req.user.nickname}`);
@@ -379,6 +390,9 @@ app.get("/api/health", (req, res) => {
 // WEBSOCKET (Chat, Presença e Passagem de Controle)
 // ----------------------------------------------------
 
+// Mapa para agendamento de auto-destruição de salas vazias (3 minutos)
+const emptyRoomTimers = new Map();
+
 wss.on("connection", async (ws, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const code = sanitizeRoomCode(url.searchParams.get("room"));
@@ -396,6 +410,13 @@ wss.on("connection", async (ws, req) => {
     ws.send(JSON.stringify({ type: "error", message: "Sala não encontrada." }));
     ws.close();
     return;
+  }
+
+  // Se a sala estava vazia e agendada para ser apagada, cancela o timer imediatamente!
+  if (emptyRoomTimers.has(room.code)) {
+    console.log(`[Auto-Delete Cancelado]: Usuário ${user.nickname} entrou na sala ${room.code}.`);
+    clearTimeout(emptyRoomTimers.get(room.code));
+    emptyRoomTimers.delete(room.code);
   }
 
   if (!room.clients) {
@@ -490,6 +511,46 @@ wss.on("connection", async (ws, req) => {
         text: `${user.nickname} saiu da sala.`,
         timestamp: Date.now(),
       });
+
+      // Se a sala ficou totalmente vazia, agenda a exclusão automática em 3 minutos (180s)
+      if (room.clients.size === 0) {
+        console.log(`[Auto-Delete Agendado]: Sala ${room.code} vazia. Será apagada automaticamente em 3 minutos.`);
+        if (emptyRoomTimers.has(room.code)) {
+          clearTimeout(emptyRoomTimers.get(room.code));
+        }
+
+        const timer = setTimeout(async () => {
+          try {
+            emptyRoomTimers.delete(room.code);
+            const currentRoom = await getRoom(room.code);
+            if (!currentRoom) return;
+
+            // Confirma se continuou sem nenhum participante após 3 minutos
+            if (!currentRoom.clients || currentRoom.clients.size === 0) {
+              console.log(`[Auto-Delete Executado]: Sala ${room.code} vazia há 3 minutos. Encerrando Hyperbeam VM e apagando...`);
+
+              if (currentRoom.sessionId && HYPERBEAM_API_KEY) {
+                try {
+                  await fetch(`https://engine.hyperbeam.com/v0/vm/${currentRoom.sessionId}`, {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${HYPERBEAM_API_KEY}` },
+                  });
+                  console.log(`[Hyperbeam VM Encerrada via Auto-Delete]: Session ${currentRoom.sessionId}`);
+                } catch (hbErr) {
+                  console.warn("[Hyperbeam VM Delete Warning]:", hbErr.message);
+                }
+              }
+
+              await deleteRoom(room.code);
+              console.log(`[Sala ${room.code} apagada automaticamente com sucesso].`);
+            }
+          } catch (err) {
+            console.error(`[Erro no Auto-Delete da sala ${room.code}]:`, err.message);
+          }
+        }, 3 * 60 * 1000); // 3 minutos
+
+        emptyRoomTimers.set(room.code, timer);
+      }
     }
   });
 });

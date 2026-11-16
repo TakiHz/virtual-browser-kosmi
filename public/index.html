@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Omniscient Watch | Navegação Simultânea</title>
+  <title>Omniscient | Hyperbeam</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
@@ -19,10 +19,10 @@
       <div class="auth-header">
         <div class="brand-badge">
           <span class="pulse-dot"></span>
-          <span>Omniscient Watch</span>
+          <span>Omniscient | Hyperbeam</span>
         </div>
         <h1 class="auth-title">Navegação Simultânea</h1>
-        <p class="auth-subtitle">Assista vídeos, navegue e jogue em conjunto em tempo real estilo Kosmi.</p>
+        <p class="auth-subtitle">Assista vídeos, navegue e interaja em conjunto em tempo real com máquina virtual na nuvem.</p>
       </div>
 
       <!-- Banner caso o usuário tenha clicado em um link de convite -->
@@ -55,7 +55,7 @@
       <form id="form-register" class="auth-form hidden">
         <div class="field-group">
           <label for="register-nickname">Escolha seu Nickname</label>
-          <input type="text" id="register-nickname" placeholder="Ex: MizaelDev" required autocomplete="username" />
+          <input type="text" id="register-nickname" placeholder="Ex: Convidado" required autocomplete="username" />
           <span class="field-hint">Apenas letras, números e traço (2 a 24 caracteres).</span>
         </div>
         <div class="field-group">
@@ -74,8 +74,10 @@
     <header class="app-header">
       <div class="header-left">
         <div class="brand-logo">
-          <span class="logo-icon">👁️</span>
-          <span class="logo-text">Omniscient Watch</span>
+          <span class="logo-mark">●</span>
+          <span class="logo-name">Omniscient</span>
+          <span class="logo-pipe">|</span>
+          <span class="logo-engine">Hyperbeam</span>
         </div>
       </div>
       <div class="header-right">
@@ -90,7 +92,7 @@
     <main class="lobby-content">
       <div class="lobby-hero">
         <h2>Salas Virtuais de Co-browsing</h2>
-        <p>Crie um navegador compartilhado na nuvem ou entre em uma sala com amigos usando o código de convite.</p>
+        <p>Crie um navegador compartilhado na nuvem ou entre em uma sala com amigos usando o código de convite. Salas vazias encerram automaticamente após 3 minutos.</p>
       </div>
 
       <div class="cards-grid">
@@ -137,7 +139,7 @@
           <div class="header-titles">
             <div class="section-tag">🟢 Transmissões Ativas</div>
             <h3>🌐 Lista de Salas</h3>
-            <p class="section-subtext">Todas as salas são protegidas por senha. A <strong>senha de acesso é o código de convite</strong> (ex: TUMMJS).</p>
+            <p class="section-subtext">Todas as salas são protegidas por senha (código da sala). Salas vazias são encerradas e apagadas automaticamente após 3 minutos de inatividade.</p>
           </div>
           <button id="btn-refresh-rooms" class="btn-refresh" type="button" title="Atualizar Lista de Salas">
             🔄 Atualizar Salas
