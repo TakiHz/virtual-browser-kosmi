@@ -591,6 +591,49 @@ body {
   background: rgba(99, 102, 241, 0.35);
 }
 
+.room-nav-center {
+  flex: 1;
+  max-width: 440px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 16px;
+}
+
+.room-nav-center input {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: var(--transition);
+}
+
+.room-nav-center input:focus {
+  border-color: var(--accent);
+}
+
+.btn-nav-go {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-family: var(--font-main);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-nav-go:hover {
+  background: var(--accent-hover);
+}
+
 .room-nav-right {
   display: flex;
   align-items: center;

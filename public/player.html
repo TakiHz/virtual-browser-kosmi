@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Omniscient Watch HLS Player</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+    #status {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 10;
+    }
+    #unmute-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 20;
+    }
+    #unmute-overlay.show {
+      display: flex;
+    }
+    .unmute-btn {
+      background: #6366f1;
+      padding: 12px 24px;
+      border-radius: 999px;
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div id="status">Carregando transmissão...</div>
+  <div id="unmute-overlay">
+    <div class="unmute-btn">🔊 Clique para Ativar Áudio</div>
+  </div>
+  <video id="video" controls autoplay playsinline></video>
+
+  <script>
+    const video = document.getElementById("video");
+    const status = document.getElementById("status");
+    const unmuteOverlay = document.getElementById("unmute-overlay");
+
+    function showStatus(msg, timeout = 3000) {
+      status.textContent = msg;
+      status.style.opacity = "1";
+      if (timeout > 0) {
+        setTimeout(() => { status.style.opacity = "0"; }, timeout);
+      }
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const streamUrl = params.get("src");
+
+    if (!streamUrl) {
+      showStatus("Nenhum link .m3u8 informado.", 0);
+    } else {
+      showStatus("Conectando ao stream HLS...");
+      
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+          backBufferLength: 90
+        });
+
+        hls.loadSource(streamUrl);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          showStatus("Transmissão iniciada!", 2000);
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(() => {
+              // Se o navegador bloquear autoplay com som, inicia mudo e avisa
+              video.muted = true;
+              video.play();
+              unmuteOverlay.classList.add("show");
+            });
+          }
+        });
+
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                showStatus("Erro de rede ao carregar .m3u8. Tentando reconectar...", 4000);
+                hls.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                showStatus("Erro de mídia. Recuperando...", 4000);
+                hls.recoverMediaError();
+                break;
+              default:
+                showStatus("Erro fatal na transmissão.", 0);
+                hls.destroy();
+                break;
+            }
+          }
+        });
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        // Suporte nativo Safari
+        video.src = streamUrl;
+        video.addEventListener("loadedmetadata", () => {
+          video.play().catch(() => {
+            video.muted = true;
+            video.play();
+            unmuteOverlay.classList.add("show");
+          });
+        });
+      } else {
+        showStatus("Seu navegador não suporta streaming HLS (.m3u8).", 0);
+      }
+    }
+
+    unmuteOverlay.addEventListener("click", () => {
+      video.muted = false;
+      unmuteOverlay.classList.remove("show");
+    });
+  </script>
+</body>
+</html>

@@ -171,7 +171,19 @@ async function requestHyperbeamVM(startUrl = "https://www.youtube.com") {
 // Criar nova sala
 app.post("/api/rooms", authMiddleware, async (req, res) => {
   try {
-    const { startUrl } = req.body || {};
+    let { startUrl } = req.body || {};
+    startUrl = startUrl?.trim() || "https://www.youtube.com";
+
+    // Se for um link de streaming HLS (.m3u8), envelopa com o player HTML5 interno com hls.js
+    if (startUrl.toLowerCase().includes(".m3u8")) {
+      const host = req.get("host");
+      const protocol =
+        req.headers["x-forwarded-proto"] === "https" || req.protocol === "https"
+          ? "https"
+          : "http";
+      startUrl = `${protocol}://${host}/player.html?src=${encodeURIComponent(startUrl)}`;
+    }
+
     let code = generateRoomCode();
 
     // Garante código único
@@ -179,7 +191,7 @@ app.post("/api/rooms", authMiddleware, async (req, res) => {
       code = generateRoomCode();
     }
 
-    const vm = await requestHyperbeamVM(startUrl || "https://www.youtube.com");
+    const vm = await requestHyperbeamVM(startUrl);
 
     const room = await createRoomStore(code, {
       hostNickname: req.user.nickname,

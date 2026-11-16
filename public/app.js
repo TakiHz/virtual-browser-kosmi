@@ -67,6 +67,8 @@ const roomElements = {
   formChat: document.getElementById("form-chat"),
   chatInputText: document.getElementById("chat-input-text"),
   usersListBox: document.getElementById("users-list-box"),
+  formNav: document.getElementById("form-room-nav"),
+  inputNavUrl: document.getElementById("input-room-nav-url"),
 };
 
 // ====================================================
@@ -509,6 +511,42 @@ roomElements.btnLeave.addEventListener("click", () => {
   window.history.pushState({}, "", "/");
   showScreen("lobby");
 });
+
+// NAVEGAR / REPRODUZIR STREAM HLS (.m3u8) DENTRO DA SALA
+if (roomElements.formNav) {
+  roomElements.formNav.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    let url = roomElements.inputNavUrl.value.trim();
+    if (!url) return;
+
+    if (!state.isControlling) {
+      showToast("Apenas quem está no controle do mouse pode trocar o vídeo/site.", "error");
+      return;
+    }
+
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url;
+    }
+
+    // Se for .m3u8, redireciona pelo player HTML5 interno com hls.js
+    if (url.toLowerCase().includes(".m3u8")) {
+      url = `${window.location.origin}/player.html?src=${encodeURIComponent(url)}`;
+    }
+
+    try {
+      if (state.hbInstance && state.hbInstance.tabs) {
+        const tabs = await state.hbInstance.tabs.query({});
+        if (tabs && tabs.length > 0) {
+          await state.hbInstance.tabs.update(tabs[0].id, { url });
+          showToast("Carregando transmissão...", "success");
+          roomElements.inputNavUrl.value = "";
+        }
+      }
+    } catch (err) {
+      showToast("Erro ao carregar link: " + err.message, "error");
+    }
+  });
+}
 
 // ====================================================
 // CONTROLES DE ÁUDIO & TELA CHEIA

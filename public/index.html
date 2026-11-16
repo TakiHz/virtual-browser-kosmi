@@ -103,8 +103,8 @@
           
           <form id="form-create-room" class="card-form">
             <div class="field-group">
-              <label for="create-start-url">URL Inicial (Opcional)</label>
-              <input type="url" id="create-start-url" value="https://www.youtube.com" placeholder="https://..." />
+              <label for="create-start-url">URL Inicial (Site, YouTube ou .m3u8)</label>
+              <input type="text" id="create-start-url" value="https://www.youtube.com" placeholder="Cole link do YouTube, site ou .m3u8..." />
             </div>
             <button type="submit" class="btn-primary" id="btn-create-room">
               <span id="btn-create-text">Criar Sala Virtual</span>
@@ -153,6 +153,12 @@
           </button>
         </div>
       </div>
+
+      <!-- BARRA DE NAVEGAÇÃO / TROCA DE VÍDEO HLS OU SITE -->
+      <form id="form-room-nav" class="room-nav-center">
+        <input type="text" id="input-room-nav-url" placeholder="Navegar para site ou colar stream .m3u8..." autocomplete="off" />
+        <button type="submit" class="btn-nav-go">Ir</button>
+      </form>
 
       <div class="room-nav-right">
         <div class="online-indicator">
