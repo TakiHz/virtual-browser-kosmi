@@ -7,6 +7,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import dotenv from "dotenv";
 import cors from "cors";
 import {
+  initDatabase,
   registerUser,
   loginUser,
   getUserByToken,
@@ -63,7 +64,7 @@ function authMiddleware(req, res, next) {
 // ----------------------------------------------------
 
 // Cadastro: apenas nickname e senha
-app.post("/api/auth/register", (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
   try {
     const { nickname, password } = req.body || {};
 
@@ -88,7 +89,7 @@ app.post("/api/auth/register", (req, res) => {
       });
     }
 
-    const { token, user } = registerUser(nickname, password);
+    const { token, user } = await registerUser(nickname, password);
     res.status(201).json({ success: true, token, user });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
@@ -96,7 +97,7 @@ app.post("/api/auth/register", (req, res) => {
 });
 
 // Login: apenas nickname e senha
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   try {
     const { nickname, password } = req.body || {};
 
@@ -107,7 +108,7 @@ app.post("/api/auth/login", (req, res) => {
       });
     }
 
-    const { token, user } = loginUser(nickname, password);
+    const { token, user } = await loginUser(nickname, password);
     res.json({ success: true, token, user });
   } catch (err) {
     res.status(401).json({ success: false, error: err.message });
@@ -174,13 +175,13 @@ app.post("/api/rooms", authMiddleware, async (req, res) => {
     let code = generateRoomCode();
 
     // Garante código único
-    while (getRoom(code)) {
+    while (await getRoom(code)) {
       code = generateRoomCode();
     }
 
     const vm = await requestHyperbeamVM(startUrl || "https://www.youtube.com");
 
-    const room = createRoomStore(code, {
+    const room = await createRoomStore(code, {
       hostNickname: req.user.nickname,
       sessionId: vm.session_id,
       embedUrl: vm.embed_url,
@@ -202,9 +203,9 @@ app.post("/api/rooms", authMiddleware, async (req, res) => {
 });
 
 // Buscar sala pelo código
-app.get("/api/rooms/:code", authMiddleware, (req, res) => {
+app.get("/api/rooms/:code", authMiddleware, async (req, res) => {
   const code = req.params.code?.toUpperCase();
-  const room = getRoom(code);
+  const room = await getRoom(code);
 
   if (!room) {
     return res.status(404).json({
@@ -237,7 +238,7 @@ app.get("/api/health", (req, res) => {
 // WEBSOCKET (Chat, Presença e Passagem de Controle)
 // ----------------------------------------------------
 
-wss.on("connection", (ws, req) => {
+wss.on("connection", async (ws, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const code = url.searchParams.get("room")?.toUpperCase();
   const token = url.searchParams.get("token");
@@ -249,7 +250,7 @@ wss.on("connection", (ws, req) => {
     return;
   }
 
-  const room = getRoom(code);
+  const room = await getRoom(code);
   if (!room) {
     ws.send(JSON.stringify({ type: "error", message: "Sala não encontrada." }));
     ws.close();
@@ -392,7 +393,8 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
+  await initDatabase();
   console.log(`
   👁️ Omniscient Watch pronto!
   ➜ Local: http://localhost:${PORT}

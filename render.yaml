@@ -12,3 +12,14 @@ services:
         value: production
       - key: HYPERBEAM_API_KEY
         sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: omniscient-watch-db
+          property: connectionString
+
+databases:
+  - name: omniscient-watch-db
+    plan: free
+    region: oregon
+    databaseName: omniscient_watch_db
+    user: omniscient_watch_db_user
