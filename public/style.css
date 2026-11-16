@@ -1054,6 +1054,98 @@ body {
   display: none !important;
 }
 
+/* BOTÃO FLUTUANTE PARA SAIR DA TELA CHEIA */
+.btn-fullscreen-exit {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 99999;
+  background: rgba(18, 19, 22, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #e5f0e7;
+  border: 1px solid rgba(133, 194, 146, 0.3);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-family: var(--font-main);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.75;
+  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  pointer-events: auto;
+  user-select: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+}
+
+.btn-fullscreen-exit:hover,
+.btn-fullscreen-exit:active {
+  opacity: 1;
+  background: rgba(46, 77, 53, 0.95);
+  border-color: var(--accent);
+}
+
+.btn-fullscreen-exit.hidden {
+  display: none !important;
+}
+
+/* ESTILOS DE TELA CHEIA (FULLSCREEN & HORIZONTAL) */
+:fullscreen .browser-wrapper,
+:-webkit-full-screen .browser-wrapper,
+.browser-wrapper:fullscreen,
+.browser-wrapper:-webkit-full-screen,
+.browser-wrapper:-moz-full-screen,
+.browser-wrapper:-ms-fullscreen {
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  aspect-ratio: auto !important;
+  flex: 1 1 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: #000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+.browser-wrapper:fullscreen #browser-mount,
+.browser-wrapper:-webkit-full-screen #browser-mount,
+.browser-wrapper:-moz-full-screen #browser-mount,
+.browser-wrapper:-ms-fullscreen #browser-mount {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  aspect-ratio: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #000 !important;
+}
+
+.browser-wrapper:fullscreen #browser-mount > *,
+.browser-wrapper:fullscreen #browser-mount video,
+.browser-wrapper:fullscreen #browser-mount iframe,
+.browser-wrapper:fullscreen #browser-mount canvas,
+.browser-wrapper:-webkit-full-screen #browser-mount > *,
+.browser-wrapper:-webkit-full-screen #browser-mount video,
+.browser-wrapper:-webkit-full-screen #browser-mount iframe,
+.browser-wrapper:-webkit-full-screen #browser-mount canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  aspect-ratio: auto !important;
+  object-fit: contain !important;
+}
+
 /* BARRA FLUTUANTE DE DIGITAÇÃO MOBILE / PROXY DE TECLADO */
 .mobile-typing-bar {
   position: absolute;

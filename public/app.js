@@ -87,6 +87,7 @@ const roomElements = {
   btnMute: document.getElementById("btn-mute"),
   volumeSlider: document.getElementById("volume-slider"),
   btnFullscreen: document.getElementById("btn-fullscreen"),
+  btnFullscreenExit: document.getElementById("btn-fullscreen-exit"),
   btnToggleSidebar: document.getElementById("btn-toggle-sidebar"),
   sidebar: document.getElementById("room-sidebar"),
   tabChat: document.getElementById("tab-chat"),
@@ -1249,7 +1250,8 @@ roomElements.btnCopyLink.addEventListener("click", async () => {
 });
 
 // SAIR DA SALA
-roomElements.btnLeave.addEventListener("click", () => {
+function leaveRoom() {
+  exitFullscreenAndUnlock();
   if (state.ws) {
     state.ws.close();
     state.ws = null;
@@ -1262,7 +1264,9 @@ roomElements.btnLeave.addEventListener("click", () => {
   window.history.pushState({}, "", "/");
   loadRoomsList();
   showScreen("lobby");
-});
+}
+
+roomElements.btnLeave.addEventListener("click", leaveRoom);
 
 // APAGAR / ENCERRAR SALA (Apenas para o criador da sala)
 if (roomElements.btnDeleteRoom) {
@@ -1353,16 +1357,160 @@ if (roomElements.btnTogglePopupBlock) {
   });
 }
 
-roomElements.btnFullscreen.addEventListener("click", () => {
-  const wrapper = document.querySelector(".browser-wrapper");
-  if (!document.fullscreenElement) {
-    wrapper.requestFullscreen().catch((err) => {
-      showToast("Erro ao abrir tela cheia: " + err.message, "error");
-    });
-  } else {
-    document.exitFullscreen();
+// ====================================================
+// CONTROLE DE TELA CHEIA E ROTAÇÃO HORIZONTAL (MOBILE & DESKTOP)
+// ====================================================
+
+let shouldLockLandscape = false;
+
+function getActiveFullscreenElement() {
+  return (
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement ||
+    null
+  );
+}
+
+// Trava a tela em horizontal ("landscape")
+// O parâmetro "landscape" permite que o sensor do giroscópio gire entre
+// landscape-primary (90°) e landscape-secondary (270°), atendendo exatamente
+// ao pedido: "vire horizontalmente porém deixe o sensor de rotação ainda ativo somente para virar na outra horizontal"
+async function lockLandscapeOrientationSafely() {
+  try {
+    if (screen.orientation && typeof screen.orientation.lock === "function") {
+      await screen.orientation.lock("landscape");
+      console.log("🔒 Orientação travada em landscape (sensor dinâmico entre horizontais ativo).");
+    } else if (typeof screen.lockOrientation === "function") {
+      screen.lockOrientation("landscape");
+    } else if (typeof screen.mozLockOrientation === "function") {
+      screen.mozLockOrientation("landscape");
+    } else if (typeof screen.msLockOrientation === "function") {
+      screen.msLockOrientation("landscape");
+    }
+  } catch (err) {
+    console.warn("Screen orientation lock indisponível ou rejeitado:", err.message);
   }
-});
+}
+
+// Destrava a orientação e retorna ao modo padrão do dispositivo
+function unlockOrientationSafely() {
+  try {
+    if (screen.orientation && typeof screen.orientation.unlock === "function") {
+      screen.orientation.unlock();
+      console.log("🔓 Orientação destravada (modo livre do sistema).");
+    } else if (typeof screen.unlockOrientation === "function") {
+      screen.unlockOrientation();
+    } else if (typeof screen.mozUnlockOrientation === "function") {
+      screen.mozUnlockOrientation();
+    } else if (typeof screen.msUnlockOrientation === "function") {
+      screen.msUnlockOrientation();
+    }
+  } catch (err) {
+    console.warn("Screen orientation unlock:", err.message);
+  }
+}
+
+async function enterFullscreenWithLandscape() {
+  const wrapper =
+    document.getElementById("browser-wrapper") ||
+    document.querySelector(".browser-wrapper") ||
+    document.documentElement;
+
+  shouldLockLandscape = true;
+
+  try {
+    if (wrapper.requestFullscreen) {
+      await wrapper.requestFullscreen();
+    } else if (wrapper.webkitRequestFullscreen) {
+      await wrapper.webkitRequestFullscreen();
+    } else if (wrapper.mozRequestFullScreen) {
+      await wrapper.mozRequestFullScreen();
+    } else if (wrapper.msRequestFullscreen) {
+      await wrapper.msRequestFullscreen();
+    }
+  } catch (err) {
+    console.warn("Falha no requestFullscreen:", err.message);
+    showToast("Erro ao abrir tela cheia: " + err.message, "error");
+    shouldLockLandscape = false;
+    return;
+  }
+
+  // Aciona o travamento horizontal
+  await lockLandscapeOrientationSafely();
+}
+
+async function exitFullscreenAndUnlock() {
+  shouldLockLandscape = false;
+
+  try {
+    if (getActiveFullscreenElement()) {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        await document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        await document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        await document.msExitFullscreen();
+      }
+    }
+  } catch (err) {
+    console.warn("Erro ao sair de tela cheia:", err.message);
+  }
+
+  unlockOrientationSafely();
+}
+
+function handleFullscreenChange() {
+  const isFs = !!getActiveFullscreenElement();
+  const btnExit = document.getElementById("btn-fullscreen-exit");
+  if (btnExit) {
+    if (isFs) {
+      btnExit.classList.remove("hidden");
+    } else {
+      btnExit.classList.add("hidden");
+    }
+  }
+
+  if (roomElements.btnFullscreen) {
+    roomElements.btnFullscreen.title = isFs ? "Sair da Tela Cheia" : "Tela Cheia";
+    roomElements.btnFullscreen.innerHTML = isFs ? "🗗" : "⛶";
+  }
+
+  if (isFs) {
+    if (shouldLockLandscape) {
+      lockLandscapeOrientationSafely();
+    }
+  } else {
+    shouldLockLandscape = false;
+    unlockOrientationSafely();
+  }
+}
+
+document.addEventListener("fullscreenchange", handleFullscreenChange);
+document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
+if (roomElements.btnFullscreen) {
+  roomElements.btnFullscreen.addEventListener("click", () => {
+    if (!getActiveFullscreenElement()) {
+      enterFullscreenWithLandscape();
+    } else {
+      exitFullscreenAndUnlock();
+    }
+  });
+}
+
+const btnFsExitFloating = document.getElementById("btn-fullscreen-exit");
+if (btnFsExitFloating) {
+  btnFsExitFloating.addEventListener("click", (e) => {
+    e.stopPropagation();
+    exitFullscreenAndUnlock();
+  });
+}
 
 // ====================================================
 // CHAT & SIDEBAR
