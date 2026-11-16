@@ -193,7 +193,7 @@ export function getUserByToken(token) {
 }
 
 export async function createRoomStore(code, data) {
-  const codeUpper = code.toUpperCase();
+  const codeUpper = String(code).trim().replace(/[^A-Za-z0-9]/g, "").toUpperCase();
   const now = Date.now();
 
   const room = {
@@ -230,7 +230,8 @@ export async function createRoomStore(code, data) {
 
 export async function getRoom(code) {
   if (!code) return null;
-  const codeUpper = code.toUpperCase();
+  const codeUpper = String(code).trim().replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (!codeUpper) return null;
 
   if (localRooms.has(codeUpper)) {
     return localRooms.get(codeUpper);
@@ -238,7 +239,10 @@ export async function getRoom(code) {
 
   if (pool) {
     try {
-      const res = await pool.query("SELECT * FROM rooms WHERE code = $1", [codeUpper]);
+      const res = await pool.query(
+        "SELECT * FROM rooms WHERE UPPER(TRIM(code)) = $1",
+        [codeUpper]
+      );
       if (res.rows.length > 0) {
         const row = res.rows[0];
         const room = {

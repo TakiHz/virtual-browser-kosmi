@@ -214,15 +214,50 @@ app.post("/api/rooms", authMiddleware, async (req, res) => {
   }
 });
 
+function sanitizeRoomCode(raw) {
+  if (!raw) return "";
+  let str = String(raw).trim();
+  const roomPathMatch = str.match(/room\/([A-Za-z0-9]+)/i);
+  if (roomPathMatch && roomPathMatch[1]) {
+    return roomPathMatch[1].trim().toUpperCase();
+  }
+  try {
+    const fullUrl = str.includes("://") ? str : "https://" + str;
+    const url = new URL(fullUrl);
+    const qRoom = url.searchParams.get("room");
+    if (qRoom) return qRoom.trim().toUpperCase().replace(/[^A-Za-z0-9]/g, "");
+  } catch (e) {}
+  return str.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+}
+
+// Buscar sala pelo código via query param ou URL
+app.get("/api/rooms", authMiddleware, async (req, res) => {
+  const rawCode = req.query.code;
+  if (!rawCode) {
+    return res.status(400).json({ success: false, error: "Código da sala não fornecido." });
+  }
+  return handleRoomLookup(rawCode, req, res);
+});
+
 // Buscar sala pelo código
 app.get("/api/rooms/:code", authMiddleware, async (req, res) => {
-  const code = req.params.code?.toUpperCase();
-  const room = await getRoom(code);
+  return handleRoomLookup(req.params.code, req, res);
+});
 
+async function handleRoomLookup(rawCode, req, res) {
+  const code = sanitizeRoomCode(rawCode);
+  if (!code) {
+    return res.status(400).json({
+      success: false,
+      error: "Código de sala inválido. Forneça o código de 6 caracteres ou o link de convite.",
+    });
+  }
+
+  const room = await getRoom(code);
   if (!room) {
     return res.status(404).json({
       success: false,
-      error: "Sala não encontrada ou encerrada. Verifique o código digitado.",
+      error: `Sala "${code}" não foi encontrada ou foi encerrada. Verifique o código digitado.`,
     });
   }
 
@@ -235,7 +270,7 @@ app.get("/api/rooms/:code", authMiddleware, async (req, res) => {
     controllerName: room.controllerName,
     onlineCount: room.clients ? room.clients.size : 0,
   });
-});
+}
 
 // Health check para Render
 app.get("/api/health", (req, res) => {
@@ -252,7 +287,7 @@ app.get("/api/health", (req, res) => {
 
 wss.on("connection", async (ws, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const code = url.searchParams.get("room")?.toUpperCase();
+  const code = sanitizeRoomCode(url.searchParams.get("room"));
   const token = url.searchParams.get("token");
 
   const user = getUserByToken(token);

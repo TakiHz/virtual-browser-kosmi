@@ -124,24 +124,42 @@ function showScreen(screenName) {
 }
 
 // ====================================================
+// SANITIZAÇÃO E EXTRAÇÃO DE CÓDIGOS DE SALA
+// ====================================================
+function extractRoomCode(raw) {
+  if (!raw) return "";
+  let str = String(raw).trim();
+  const roomPathMatch = str.match(/room\/([A-Za-z0-9]+)/i);
+  if (roomPathMatch && roomPathMatch[1]) {
+    return roomPathMatch[1].trim().toUpperCase();
+  }
+  try {
+    const fullUrl = str.includes("://") ? str : "https://" + str;
+    const url = new URL(fullUrl);
+    const qRoom = url.searchParams.get("room");
+    if (qRoom) return qRoom.trim().toUpperCase().replace(/[^A-Za-z0-9]/g, "");
+  } catch (e) {}
+  return str.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+}
+
+// ====================================================
 // ROTEAMENTO & EXTRAÇÃO DE CÓDIGO DE CONVITE
 // ====================================================
 function checkInviteRoute() {
   const path = window.location.pathname;
-  const match = path.match(/\/room\/([A-Za-z0-9]+)/);
-  if (match && match[1]) {
-    state.pendingInviteCode = match[1].toUpperCase();
-  } else {
+  let code = extractRoomCode(path);
+  if (!code) {
     const params = new URLSearchParams(window.location.search);
     const roomParam = params.get("room");
     if (roomParam) {
-      state.pendingInviteCode = roomParam.trim().toUpperCase();
+      code = extractRoomCode(roomParam);
     }
   }
 
-  if (state.pendingInviteCode) {
+  if (code) {
+    state.pendingInviteCode = code;
     authElements.inviteNotice.classList.remove("hidden");
-    authElements.noticeRoomCode.textContent = state.pendingInviteCode;
+    authElements.noticeRoomCode.textContent = code;
     authElements.inputLoginNick.focus();
   }
 }
@@ -303,11 +321,25 @@ lobbyElements.formCreate.addEventListener("submit", async (e) => {
   }
 });
 
-// Entrar com Código
+// Auto-extração caso o usuário cole o link completo no input de código
+lobbyElements.joinRoomCode.addEventListener("input", (e) => {
+  const val = e.target.value;
+  if (val.includes("/") || val.includes("http") || val.includes("room")) {
+    const clean = extractRoomCode(val);
+    if (clean) {
+      e.target.value = clean;
+    }
+  }
+});
+
+// Entrar com Código ou Link
 lobbyElements.formJoin.addEventListener("submit", (e) => {
   e.preventDefault();
-  const code = lobbyElements.joinRoomCode.value.trim().toUpperCase();
-  if (!code) return;
+  const code = extractRoomCode(lobbyElements.joinRoomCode.value);
+  if (!code) {
+    showToast("Por favor, digite o código de 6 caracteres ou cole o link de convite.", "error");
+    return;
+  }
   joinRoom(code);
 });
 
@@ -315,19 +347,31 @@ lobbyElements.formJoin.addEventListener("submit", (e) => {
 // SALA VIRTUAL: WEBRTC & WEBSOCKET
 // ====================================================
 
-async function joinRoom(code) {
+async function joinRoom(rawCode) {
+  const code = extractRoomCode(rawCode);
+  if (!code) {
+    showToast("Código de sala inválido.", "error");
+    return;
+  }
+
+  const btnSpan = lobbyElements.btnJoinRoom ? lobbyElements.btnJoinRoom.querySelector("span") : null;
+  const originalText = btnSpan ? btnSpan.textContent : "Entrar na Sala";
+
   try {
+    if (lobbyElements.btnJoinRoom) lobbyElements.btnJoinRoom.disabled = true;
+    if (btnSpan) btnSpan.textContent = "Buscando Sala...";
+
     // 1. Obter informações da sala
     const res = await fetch(`/api/rooms/${code}`, {
       headers: { Authorization: `Bearer ${state.token}` },
     });
 
     const room = await res.json();
-    if (!res.ok) throw new Error(room.error || "Sala inexistente.");
+    if (!res.ok) throw new Error(room.error || "Sala não encontrada ou encerrada.");
 
     state.currentRoom = room;
 
-    // Atualiza a URL sem recarregar a página
+    // Atualiza a URL sem recarregar a página garantindo o código correto
     window.history.pushState({}, "", `/room/${room.code}`);
 
     // Exibe a tela da sala
@@ -350,6 +394,9 @@ async function joinRoom(code) {
   } catch (err) {
     showToast(err.message, "error");
     showScreen("lobby");
+  } finally {
+    if (lobbyElements.btnJoinRoom) lobbyElements.btnJoinRoom.disabled = false;
+    if (btnSpan) btnSpan.textContent = originalText;
   }
 }
 
