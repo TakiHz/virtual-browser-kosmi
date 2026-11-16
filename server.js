@@ -387,8 +387,8 @@ app.get("/room/:code", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Roteamento SPA padrão
-app.get("*", (req, res) => {
+// Fallback universal para SPA (compatível com Express 5)
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
