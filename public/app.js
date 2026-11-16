@@ -77,6 +77,8 @@ const roomElements = {
   btnCopyLink: document.getElementById("btn-copy-link"),
   btnLeave: document.getElementById("btn-leave-room"),
   onlineCount: document.getElementById("room-online-count"),
+  timerBadge: document.getElementById("room-timer-badge"),
+  timerText: document.getElementById("room-timer-text"),
   browserMount: document.getElementById("browser-mount"),
   controlStatusBadge: document.getElementById("control-status-badge"),
   controlStatusText: document.getElementById("control-status-text"),
@@ -358,6 +360,8 @@ async function loadRoomsList() {
       card.className = `room-card-item ${isOwner ? "is-own" : ""}`;
 
       const timeAgo = formatTimeAgo(r.createdAt);
+      const isOnline = (r.onlineCount || 0) > 0;
+      const secondsLeft = typeof r.secondsLeft === "number" ? r.secondsLeft : 180;
 
       card.innerHTML = `
         <div class="room-card-top">
@@ -365,11 +369,18 @@ async function loadRoomsList() {
             <span class="room-host-title">
               ${isOwner ? "👑" : "🖥️"} Sala de ${escapeHTML(r.hostNickname)}
             </span>
-            <span class="room-time-meta">Criada ${timeAgo} • ${r.onlineCount || 0} online</span>
+            <span class="room-time-meta">Criada ${timeAgo} • ${isOnline ? `${r.onlineCount} online` : "Vazia"}</span>
           </div>
-          <span class="room-badge-pill ${isOwner ? "owner" : "lock"}">
-            ${isOwner ? "👑 Sua Sala" : "🔒 Protegida"}
-          </span>
+          <div class="room-card-badges">
+            ${
+              isOnline
+                ? `<span class="room-badge-pill active">🟢 ${r.onlineCount} online</span>`
+                : `<span class="room-badge-pill countdown timer-countdown" data-seconds="${secondsLeft}">⏳ Fecha em ${formatMinutesSeconds(secondsLeft)}</span>`
+            }
+            <span class="room-badge-pill ${isOwner ? "owner" : "lock"}">
+              ${isOwner ? "👑 Sua Sala" : "🔒 Protegida"}
+            </span>
+          </div>
         </div>
 
         <div class="room-card-body">
@@ -428,6 +439,8 @@ async function loadRoomsList() {
 
       lobbyElements.roomsListGrid.appendChild(card);
     });
+
+    startRoomsCountdownTicker();
   } catch (err) {
     console.warn("Erro ao listar salas:", err);
   }
@@ -443,6 +456,52 @@ function formatTimeAgo(timestamp) {
   if (diffHours < 24) return `há ${diffHours}h`;
   const diffDays = Math.floor(diffHours / 24);
   return `há ${diffDays}d`;
+}
+
+function formatMinutesSeconds(totalSec) {
+  if (!totalSec || totalSec <= 0) return "00:00";
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+// Ticker contínuo de contagem regressiva para exibição em tempo real
+let roomCountdownInterval = null;
+function startRoomsCountdownTicker() {
+  if (roomCountdownInterval) clearInterval(roomCountdownInterval);
+  roomCountdownInterval = setInterval(() => {
+    // 1. Atualiza os cards no lobby
+    const badges = document.querySelectorAll(".timer-countdown[data-seconds]");
+    badges.forEach((el) => {
+      let sec = parseInt(el.getAttribute("data-seconds"), 10);
+      if (isNaN(sec)) return;
+      sec--;
+      if (sec <= 0) {
+        el.setAttribute("data-seconds", "0");
+        el.textContent = "⏳ Encerrando...";
+      } else {
+        el.setAttribute("data-seconds", String(sec));
+        el.textContent = `⏳ Fecha em ${formatMinutesSeconds(sec)}`;
+      }
+    });
+
+    // 2. Atualiza badge de fechamento da sala aberta
+    if (roomElements.timerBadge && roomElements.timerText && state.currentRoom) {
+      const activeTimer = roomElements.timerBadge.getAttribute("data-seconds");
+      if (activeTimer) {
+        let sec = parseInt(activeTimer, 10);
+        if (!isNaN(sec) && sec > 0) {
+          sec--;
+          roomElements.timerBadge.setAttribute("data-seconds", String(sec));
+          roomElements.timerText.textContent = `⏳ Fecha em ${formatMinutesSeconds(sec)}`;
+          if (sec <= 0) {
+            showToast("A sala foi encerrada automaticamente por inatividade.", "info");
+            leaveRoom();
+          }
+        }
+      }
+    }
+  }, 1000);
 }
 
 // Alternar abas Entrar / Cadastrar
@@ -1092,6 +1151,23 @@ function updateRoomState(data) {
   const count = onlineUsers.length;
   roomElements.onlineCount.textContent = `${count} ${count === 1 ? "pessoa" : "pessoas"}`;
   roomElements.tabUsersCount.textContent = count;
+
+  // Atualizar temporizador de fechamento da sala
+  if (roomElements.timerBadge && roomElements.timerText) {
+    if (data.secondsLeft && data.secondsLeft > 0) {
+      roomElements.timerBadge.setAttribute("data-seconds", String(data.secondsLeft));
+      roomElements.timerText.textContent = `⏳ Fecha em ${formatMinutesSeconds(data.secondsLeft)}`;
+      roomElements.timerBadge.className = "room-timer-badge closing";
+    } else if (count <= 1) {
+      roomElements.timerBadge.removeAttribute("data-seconds");
+      roomElements.timerText.textContent = "⏳ Fecha 3m após sair";
+      roomElements.timerBadge.className = "room-timer-badge armed";
+    } else {
+      roomElements.timerBadge.removeAttribute("data-seconds");
+      roomElements.timerText.textContent = "🟢 Sala ativa";
+      roomElements.timerBadge.className = "room-timer-badge active";
+    }
+  }
 
   // Atualizar lista de usuários
   roomElements.usersListBox.innerHTML = "";

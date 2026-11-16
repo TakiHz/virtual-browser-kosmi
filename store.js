@@ -203,6 +203,7 @@ export async function createRoomStore(code, data) {
     embedUrl: data.embedUrl,
     adminToken: data.adminToken,
     createdAt: now,
+    emptySince: now,
     currentController: null,
     controllerName: null,
     clients: new Set(),
@@ -252,6 +253,7 @@ export async function getRoom(code) {
           embedUrl: row.embed_url,
           adminToken: row.admin_token,
           createdAt: Number(row.created_at),
+          emptySince: Number(row.created_at),
           currentController: null,
           controllerName: null,
           clients: new Set(),
@@ -272,18 +274,33 @@ export function getAllRooms() {
 }
 
 export async function getRecentActiveRooms(limit = 12) {
+  const AUTO_DELETE_MS = 3 * 60 * 1000;
+  const now = Date.now();
+
   if (pool) {
     try {
       const res = await pool.query(
         "SELECT code, host_nickname, created_at FROM rooms ORDER BY created_at DESC LIMIT $1",
         [limit]
       );
-      return res.rows.map((r) => ({
-        code: r.code,
-        hostNickname: r.host_nickname,
-        createdAt: Number(r.created_at),
-        onlineCount: localRooms.get(r.code)?.clients?.size || 0,
-      }));
+      return res.rows.map((r) => {
+        const local = localRooms.get(r.code);
+        const clientsCount = local?.clients?.size || 0;
+        const emptySince = local?.emptySince || (clientsCount === 0 ? Number(r.created_at) : null);
+        let secondsLeft = null;
+        if (clientsCount === 0 && emptySince) {
+          const elapsed = Math.max(0, now - emptySince);
+          secondsLeft = Math.max(0, Math.ceil((AUTO_DELETE_MS - elapsed) / 1000));
+        }
+        return {
+          code: r.code,
+          hostNickname: r.host_nickname,
+          createdAt: Number(r.created_at),
+          onlineCount: clientsCount,
+          emptySince,
+          secondsLeft,
+        };
+      });
     } catch (e) {
       console.error("Erro ao listar salas do banco:", e.message);
     }
@@ -292,12 +309,23 @@ export async function getRecentActiveRooms(limit = 12) {
   return Array.from(localRooms.values())
     .slice(-limit)
     .reverse()
-    .map((r) => ({
-      code: r.code,
-      hostNickname: r.hostNickname,
-      createdAt: r.createdAt,
-      onlineCount: r.clients ? r.clients.size : 0,
-    }));
+    .map((r) => {
+      const clientsCount = r.clients ? r.clients.size : 0;
+      const emptySince = r.emptySince || (clientsCount === 0 ? r.createdAt : null);
+      let secondsLeft = null;
+      if (clientsCount === 0 && emptySince) {
+        const elapsed = Math.max(0, now - emptySince);
+        secondsLeft = Math.max(0, Math.ceil((AUTO_DELETE_MS - elapsed) / 1000));
+      }
+      return {
+        code: r.code,
+        hostNickname: r.hostNickname,
+        createdAt: r.createdAt,
+        onlineCount: clientsCount,
+        emptySince,
+        secondsLeft,
+      };
+    });
 }
 
 export async function deleteRoom(code) {

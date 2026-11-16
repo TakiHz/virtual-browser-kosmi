@@ -413,6 +413,7 @@ wss.on("connection", async (ws, req) => {
   }
 
   // Se a sala estava vazia e agendada para ser apagada, cancela o timer imediatamente!
+  room.emptySince = null;
   if (emptyRoomTimers.has(room.code)) {
     console.log(`[Auto-Delete Cancelado]: Usuário ${user.nickname} entrou na sala ${room.code}.`);
     clearTimeout(emptyRoomTimers.get(room.code));
@@ -512,8 +513,9 @@ wss.on("connection", async (ws, req) => {
         timestamp: Date.now(),
       });
 
-      // Se a sala ficou totalmente vazia, agenda a exclusão automática em 3 minutos (180s)
+      // Se a sala ficou totalmente vazia, marca emptySince e agenda o encerramento em 3 minutos
       if (room.clients.size === 0) {
+        room.emptySince = Date.now();
         console.log(`[Auto-Delete Agendado]: Sala ${room.code} vazia. Será apagada automaticamente em 3 minutos.`);
         if (emptyRoomTimers.has(room.code)) {
           clearTimeout(emptyRoomTimers.get(room.code));
@@ -557,11 +559,21 @@ wss.on("connection", async (ws, req) => {
 
 function broadcastRoomState(room) {
   if (!room.clients) return;
+  const AUTO_DELETE_MS = 3 * 60 * 1000;
+  let secondsLeft = null;
+  if (room.clients.size === 0 && room.emptySince) {
+    const elapsed = Math.max(0, Date.now() - room.emptySince);
+    secondsLeft = Math.max(0, Math.ceil((AUTO_DELETE_MS - elapsed) / 1000));
+  }
+
   const payload = JSON.stringify({
     type: "room_state",
     code: room.code,
     currentController: room.currentController,
     controllerName: room.controllerName,
+    onlineCount: room.clients.size,
+    emptySince: room.emptySince,
+    secondsLeft,
     onlineUsers: Array.from(room.clients).map((c) => ({
       userId: c.userId,
       nickname: c.nickname,
@@ -594,6 +606,45 @@ app.get("/room/:code", (req, res) => {
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+
+// Job contínuo: monitora e encerra QUALQUER sala que ficar vazia por 3 minutos (180s)
+const AUTO_DELETE_MS = 3 * 60 * 1000;
+setInterval(async () => {
+  try {
+    const allRooms = getAllRooms();
+    const now = Date.now();
+
+    for (const [code, room] of allRooms.entries()) {
+      const activeCount = room.clients ? room.clients.size : 0;
+      if (activeCount === 0) {
+        if (!room.emptySince) {
+          room.emptySince = now;
+        }
+        const elapsed = now - room.emptySince;
+        if (elapsed >= AUTO_DELETE_MS) {
+          console.log(`[Auto-Delete 3min]: Encerrando sala ${code} por inatividade (vazia há 3 minutos)...`);
+          if (room.sessionId && HYPERBEAM_API_KEY) {
+            try {
+              await fetch(`https://engine.hyperbeam.com/v0/vm/${room.sessionId}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${HYPERBEAM_API_KEY}` },
+              });
+              console.log(`[Hyperbeam VM Encerrada]: Session ${room.sessionId}`);
+            } catch (hbErr) {
+              console.warn(`[Hyperbeam VM Delete Warning]: ${hbErr.message}`);
+            }
+          }
+          await deleteRoom(code);
+          console.log(`[Sala ${code} apagada permanentemente].`);
+        }
+      } else {
+        room.emptySince = null;
+      }
+    }
+  } catch (err) {
+    console.error("[Erro no job de auto-delete das salas]:", err.message);
+  }
+}, 3000);
 
 server.listen(PORT, async () => {
   await initDatabase();

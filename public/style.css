@@ -6,34 +6,34 @@
    ==================================================== */
 
 :root {
-  /* Paleta Base: Verde Musgo Opaco & Obsidian Charcoal */
-  --bg-main: #0c100d;
-  --bg-card: #121814;
-  --bg-elevated: #18221b;
-  --bg-glass: rgba(18, 24, 20, 0.92);
+  /* Paleta Base: Cinza Bem Escuro & Verde Musgo */
+  --bg-main: #121316;
+  --bg-card: #18191d;
+  --bg-elevated: #202226;
+  --bg-glass: rgba(24, 25, 29, 0.94);
   
   /* Linhas e Contornos Finos (Arquitetural) */
-  --border-subtle: rgba(140, 168, 145, 0.12);
-  --border-strong: rgba(140, 168, 145, 0.24);
-  --border-accent: rgba(140, 168, 145, 0.38);
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-accent: rgba(74, 119, 86, 0.4);
 
-  /* Acentos Verdes Musgo Opacos (Sem saturação berrante ou brilhos agressivos) */
-  --accent: #3d5643;
-  --accent-hover: #4a6751;
-  --accent-active: #324737;
-  --accent-glow: rgba(61, 86, 67, 0.18);
-  --accent-subtle: rgba(61, 86, 67, 0.14);
-  --accent-text: #9eb6a3;
+  /* Acentos Verdes Mantidos (Opaco, Elegante e Sem Saturação Estridente) */
+  --accent: #2e4d35;
+  --accent-hover: #3d6848;
+  --accent-active: #27422d;
+  --accent-glow: rgba(52, 88, 61, 0.22);
+  --accent-subtle: rgba(52, 88, 61, 0.16);
+  --accent-text: #85c292;
 
   /* Cores de Texto */
-  --text-primary: #e5ede7;
-  --text-secondary: #95a798;
-  --text-muted: #5e7062;
+  --text-primary: #f0f3f1;
+  --text-secondary: #9ea5a1;
+  --text-muted: #69706b;
 
   /* Estados Funcionais */
-  --success: #4a7756;
-  --success-glow: rgba(74, 119, 86, 0.2);
-  --success-text: #8bc29a;
+  --success: #3d6848;
+  --success-glow: rgba(61, 104, 72, 0.2);
+  --success-text: #85c292;
   --danger: #783838;
   --danger-hover: #8e4242;
   --danger-border: rgba(168, 70, 70, 0.3);
@@ -360,7 +360,7 @@ body {
 }
 
 .btn-secondary:hover {
-  background: #202b23;
+  background: #282b31;
   border-color: var(--border-strong);
 }
 
@@ -614,7 +614,7 @@ body {
 }
 
 .btn-refresh:hover {
-  background: #202b23;
+  background: #282b31;
   border-color: var(--border-strong);
 }
 
@@ -672,12 +672,31 @@ body {
   color: var(--text-muted);
 }
 
+.room-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 .room-badge-pill {
   font-size: 0.68rem;
   font-weight: 500;
   padding: 2px 7px;
   border-radius: 999px;
   white-space: nowrap;
+}
+
+.room-badge-pill.countdown {
+  background: rgba(117, 98, 48, 0.16);
+  color: #dfc37b;
+  border: 1px solid rgba(117, 98, 48, 0.32);
+}
+
+.room-badge-pill.active {
+  background: var(--accent-subtle);
+  color: var(--accent-text);
+  border: 1px solid var(--border-subtle);
 }
 
 .room-badge-pill.lock {
@@ -1146,6 +1165,73 @@ body {
   gap: 8px;
 }
 
+.room-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-bottom: 2px;
+}
+
+.room-brand-row .brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.room-brand-row .logo-icon {
+  font-size: 0.75rem;
+  color: var(--accent-text);
+}
+
+.room-brand-row .logo-text {
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.room-status-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.room-timer-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.room-timer-badge.armed {
+  color: #d1b162;
+  background: rgba(117, 98, 48, 0.15);
+  border-color: rgba(117, 98, 48, 0.3);
+}
+
+.room-timer-badge.active {
+  color: var(--accent-text);
+  background: var(--accent-subtle);
+  border-color: var(--border-subtle);
+}
+
+.room-timer-badge.closing {
+  color: var(--danger-text);
+  background: rgba(120, 56, 56, 0.18);
+  border-color: var(--danger-border);
+  animation: pulseClosing 1.5s infinite;
+}
+
+@keyframes pulseClosing {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
 .room-nav-top-row {
   display: flex;
   align-items: center;
@@ -1176,7 +1262,7 @@ body {
 }
 
 .btn-icon:hover {
-  background: #202b23;
+  background: #282b31;
   border-color: var(--border-strong);
 }
 
@@ -1364,7 +1450,7 @@ body {
 }
 
 .btn-dock.active-control {
-  background: #202b23;
+  background: #282b31;
   border: 1px solid var(--border-strong);
 }
 
@@ -1580,18 +1666,18 @@ body {
   word-break: break-word;
 }
 
-/* Mensagens do próprio usuário: Verde Musgo Opaco / Muted Slate */
+/* Mensagens do próprio usuário: Verde Musgo Elegante */
 .own-bubble {
-  background: #2a3a2e;
-  border: 1px solid rgba(140, 168, 145, 0.22);
-  color: #e5ede7;
+  background: var(--accent);
+  border: 1px solid rgba(133, 194, 146, 0.28);
+  color: #f0f4f1;
   border-radius: 12px 12px 2px 12px;
 }
 
-/* Mensagens de outras pessoas: Charcoal Slate */
+/* Mensagens de outras pessoas: Cinza Escuro Neutro */
 .other-bubble {
-  background: #17211a;
-  color: #dbe4dd;
+  background: #1e2025;
+  color: #e2e4e3;
   border-radius: 12px 12px 12px 2px;
   border: 1px solid var(--border-subtle);
 }
@@ -1704,7 +1790,7 @@ body {
     height: 100vh !important;
     height: 100dvh !important;
     overflow: hidden !important;
-    background: #0c100d !important;
+    background: var(--bg-main) !important;
   }
 
   /* 1. Header Fino no Topo */

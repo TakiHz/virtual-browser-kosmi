@@ -188,6 +188,23 @@
     <div class="room-side-panel" id="room-side-panel">
       <!-- 1. CABEÇALHO DA SALA -->
       <header class="room-header" id="room-header">
+        <!-- LOGO & BRANDING DA SALA -->
+        <div class="room-brand-row">
+          <div class="brand-logo">
+            <span class="logo-icon">●</span>
+            <span class="logo-text">Omniscient | Hyperbeam</span>
+          </div>
+          <div class="room-status-group">
+            <div class="online-indicator">
+              <span class="live-dot"></span>
+              <span id="room-online-count">1 online</span>
+            </div>
+            <div id="room-timer-badge" class="room-timer-badge" title="Temporizador de encerramento da sala">
+              <span id="room-timer-text">⏳ Fecha 3m após sair</span>
+            </div>
+          </div>
+        </div>
+
         <div class="room-nav-top-row">
           <div class="room-nav-left">
             <button id="btn-leave-room" class="btn-icon" title="Voltar ao Lobby">
@@ -213,10 +230,6 @@
             <button id="btn-delete-room" class="btn-delete-room hidden" title="Apagar e encerrar esta sala permanentemente">
               🗑️ Apagar
             </button>
-            <div class="online-indicator">
-              <span class="live-dot"></span>
-              <span id="room-online-count">1 online</span>
-            </div>
           </div>
         </div>
 
