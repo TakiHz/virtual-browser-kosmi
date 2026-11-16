@@ -394,7 +394,7 @@ app.use((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`
-  🌐 Kosmi Virtual Browser pronto!
+  👁️ Omniscient Watch pronto!
   ➜ Local: http://localhost:${PORT}
   ➜ Chave Hyperbeam: ${HYPERBEAM_API_KEY ? "Configurada ✅" : "Pendente (.env) ⚠️"}
   `);

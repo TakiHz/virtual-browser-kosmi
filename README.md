@@ -1,4 +1,4 @@
-# 🌐 Virtual Browser Co-Browsing (Estilo Kosmi)
+# 👁️ Omniscient Watch
 
 Plataforma de navegação web simultânea e colaborativa na nuvem com áudio e vídeo de alta fidelidade em tempo real, inspirada no **Kosmi** e **Rabb.it**, construída com **Node.js**, **WebRTC** e **Hyperbeam API**, pronta para deploy gratuito no **Render.com** via **GitHub**.
 

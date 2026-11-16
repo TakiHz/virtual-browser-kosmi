@@ -1,7 +1,7 @@
 {
-  "name": "virtual-browser-hyperbeam",
+  "name": "omniscient-watch",
   "version": "1.0.0",
-  "description": "Virtual Browser Co-browsing platform like Kosmi powered by Hyperbeam, Node.js and WebRTC",
+  "description": "Omniscient Watch - Plataforma de navegação web simultânea estilo Kosmi powered by Hyperbeam, Node.js e WebRTC",
   "main": "server.js",
   "type": "module",
   "scripts": {
