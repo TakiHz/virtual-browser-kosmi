@@ -19,6 +19,7 @@ import {
   getRecentActiveRooms,
   deleteRoom,
   destroySession,
+  updateUserAvatar,
 } from "./store.js";
 
 dotenv.config();
@@ -34,7 +35,8 @@ const PORT = process.env.PORT || 3000;
 const HYPERBEAM_API_KEY = process.env.HYPERBEAM_API_KEY;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
 // Servir o SDK do Hyperbeam compilado como ES Module nativo
@@ -128,7 +130,11 @@ app.post("/api/auth/login", async (req, res) => {
 app.get("/api/auth/me", authMiddleware, (req, res) => {
   res.json({
     success: true,
-    user: { id: req.user.id, nickname: req.user.nickname },
+    user: {
+      id: req.user.id,
+      nickname: req.user.nickname,
+      avatar: req.user.avatar || null,
+    },
   });
 });
 
@@ -138,6 +144,48 @@ app.post("/api/auth/logout", authMiddleware, async (req, res) => {
     await destroySession(req.token);
     res.json({ success: true, message: "Sessão encerrada com sucesso." });
   } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Atualizar avatar / foto de perfil
+app.post("/api/auth/profile", authMiddleware, async (req, res) => {
+  try {
+    const { avatar } = req.body || {};
+    if (avatar && typeof avatar === "string") {
+      const trimmed = avatar.trim();
+      if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("data:image/")) {
+        return res.status(400).json({
+          success: false,
+          error: "Formato de foto inválido. Forneça uma URL (http/https) ou envie um arquivo de imagem.",
+        });
+      }
+      if (trimmed.length > 3.5 * 1024 * 1024) {
+        return res.status(400).json({
+          success: false,
+          error: "A imagem selecionada é muito grande. Escolha uma imagem de até 2MB.",
+        });
+      }
+    }
+
+    const updated = await updateUserAvatar(req.user.id, avatar ? avatar.trim() : null);
+    if (!updated) {
+      return res.status(404).json({ success: false, error: "Usuário não encontrado." });
+    }
+
+    req.user.avatar = updated.avatar;
+
+    res.json({
+      success: true,
+      user: {
+        id: updated.id,
+        nickname: updated.nickname || req.user.nickname,
+        avatar: updated.avatar,
+      },
+      message: updated.avatar ? "Foto de perfil atualizada com sucesso!" : "Foto de perfil removida.",
+    });
+  } catch (err) {
+    console.error("[Erro ao atualizar perfil]:", err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -450,6 +498,7 @@ wss.on("connection", async (ws, req) => {
     ws,
     userId: user.id,
     nickname: user.nickname,
+    avatar: user.avatar || null,
   };
 
   room.clients.add(clientInfo);
@@ -478,6 +527,7 @@ wss.on("connection", async (ws, req) => {
               type: "chat",
               user: user.nickname,
               userId: user.id,
+              avatar: user.avatar || null,
               text: data.text.trim().substring(0, 500),
               timestamp: Date.now(),
             });
@@ -599,6 +649,7 @@ function broadcastRoomState(room) {
     onlineUsers: Array.from(room.clients).map((c) => ({
       userId: c.userId,
       nickname: c.nickname,
+      avatar: c.avatar || null,
     })),
   });
 

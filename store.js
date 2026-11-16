@@ -68,6 +68,7 @@ export async function initDatabase() {
         password_hash TEXT NOT NULL,
         created_at BIGINT NOT NULL
       );
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
       CREATE TABLE IF NOT EXISTS rooms (
         code TEXT PRIMARY KEY,
         host_nickname TEXT NOT NULL,
@@ -82,13 +83,14 @@ export async function initDatabase() {
         nickname TEXT NOT NULL,
         created_at BIGINT NOT NULL
       );
+      ALTER TABLE sessions ADD COLUMN IF NOT EXISTS avatar TEXT;
     `);
     console.log("✅ Tabelas permanentes 'users', 'rooms' e 'sessions' verificadas no PostgreSQL.");
 
     // Restaura sessões ativas do banco
     const sessRes = await pool.query("SELECT * FROM sessions");
     for (const row of sessRes.rows) {
-      sessions.set(row.token, { id: row.user_id, nickname: row.nickname });
+      sessions.set(row.token, { id: row.user_id, nickname: row.nickname, avatar: row.avatar || null });
     }
     if (sessRes.rows.length > 0) {
       console.log(`🔑 ${sessRes.rows.length} sessões de login restauradas com sucesso do PostgreSQL.`);
@@ -169,15 +171,15 @@ export async function registerUser(nickname, password) {
   }
 
   const token = crypto.randomBytes(32).toString("hex");
-  const userObj = { id, nickname: nickname.trim() };
+  const userObj = { id, nickname: nickname.trim(), avatar: null };
   sessions.set(token, userObj);
   saveLocalSessions();
 
   if (pool) {
     try {
       await pool.query(
-        "INSERT INTO sessions (token, user_id, nickname, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
-        [token, id, userObj.nickname, now]
+        "INSERT INTO sessions (token, user_id, nickname, avatar, created_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (token) DO UPDATE SET avatar = $4",
+        [token, id, userObj.nickname, null, now]
       );
     } catch (e) {
       console.warn("Aviso ao salvar sessão no banco:", e.message);
@@ -193,7 +195,7 @@ export async function loginUser(nickname, password) {
 
   if (pool) {
     const res = await pool.query(
-      "SELECT id, nickname, password_hash FROM users WHERE clean_nick = $1",
+      "SELECT id, nickname, password_hash, avatar FROM users WHERE clean_nick = $1",
       [cleanNick]
     );
     if (res.rows.length === 0) {
@@ -203,6 +205,7 @@ export async function loginUser(nickname, password) {
       id: res.rows[0].id,
       nickname: res.rows[0].nickname,
       passwordHash: res.rows[0].password_hash,
+      avatar: res.rows[0].avatar || null,
     };
   } else {
     user = localUsers.get(cleanNick);
@@ -213,15 +216,15 @@ export async function loginUser(nickname, password) {
   }
 
   const token = crypto.randomBytes(32).toString("hex");
-  const userObj = { id: user.id, nickname: user.nickname };
+  const userObj = { id: user.id, nickname: user.nickname, avatar: user.avatar || null };
   sessions.set(token, userObj);
   saveLocalSessions();
 
   if (pool) {
     try {
       await pool.query(
-        "INSERT INTO sessions (token, user_id, nickname, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
-        [token, user.id, userObj.nickname, Date.now()]
+        "INSERT INTO sessions (token, user_id, nickname, avatar, created_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (token) DO UPDATE SET avatar = $4",
+        [token, user.id, userObj.nickname, userObj.avatar, Date.now()]
       );
     } catch (e) {
       console.warn("Aviso ao salvar sessão no banco:", e.message);
@@ -248,6 +251,44 @@ export async function destroySession(token) {
       console.warn("Aviso ao remover sessão do banco:", e.message);
     }
   }
+}
+
+export async function updateUserAvatar(userId, avatar) {
+  if (!userId) return null;
+  const avatarClean = avatar && typeof avatar === "string" ? avatar.trim() : null;
+
+  // 1. Atualiza no cache de usuários
+  let updatedUser = null;
+  for (const user of localUsers.values()) {
+    if (user.id === userId) {
+      user.avatar = avatarClean;
+      updatedUser = user;
+      break;
+    }
+  }
+  saveLocalUsers();
+
+  // 2. Atualiza em todas as sessões ativas deste usuário
+  for (const [token, sess] of sessions.entries()) {
+    if (sess.id === userId) {
+      sess.avatar = avatarClean;
+    }
+  }
+  saveLocalSessions();
+
+  // 3. Atualiza no PostgreSQL se disponível
+  if (pool) {
+    try {
+      await pool.query("UPDATE users SET avatar = $1 WHERE id = $2", [avatarClean, userId]);
+      await pool.query("UPDATE sessions SET avatar = $1 WHERE user_id = $2", [avatarClean, userId]);
+    } catch (e) {
+      console.warn("Aviso ao salvar avatar no PostgreSQL:", e.message);
+    }
+  }
+
+  return updatedUser
+    ? { id: updatedUser.id, nickname: updatedUser.nickname, avatar: updatedUser.avatar }
+    : { id: userId, avatar: avatarClean };
 }
 
 export async function createRoomStore(code, data) {

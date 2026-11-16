@@ -35,6 +35,7 @@ const authElements = {
 const lobbyElements = {
   userDisplayName: document.getElementById("user-display-name"),
   userAvatar: document.getElementById("user-avatar"),
+  userProfileBtn: document.getElementById("user-profile-btn"),
   btnLogout: document.getElementById("btn-logout"),
   formCreate: document.getElementById("form-create-room"),
   createStartUrl: document.getElementById("create-start-url"),
@@ -46,6 +47,26 @@ const lobbyElements = {
   roomsListGrid: document.getElementById("rooms-list-grid"),
   roomsEmptyState: document.getElementById("rooms-empty-state"),
   btnRefreshRooms: document.getElementById("btn-refresh-rooms"),
+};
+
+const profileModalElements = {
+  overlay: document.getElementById("modal-profile"),
+  closeBtn: document.getElementById("modal-profile-close-btn"),
+  previewCircle: document.getElementById("avatar-preview"),
+  previewInitial: document.getElementById("avatar-preview-initial"),
+  previewImg: document.getElementById("avatar-preview-img"),
+  previewNick: document.getElementById("avatar-preview-nick"),
+  tabFile: document.getElementById("tab-avatar-file"),
+  tabUrl: document.getElementById("tab-avatar-url"),
+  sectionFile: document.getElementById("section-avatar-file"),
+  sectionUrl: document.getElementById("section-avatar-url"),
+  dropzone: document.getElementById("avatar-dropzone"),
+  inputFile: document.getElementById("input-avatar-file"),
+  inputUrl: document.getElementById("input-avatar-url"),
+  form: document.getElementById("form-modal-profile"),
+  btnCancel: document.getElementById("btn-modal-profile-cancel"),
+  btnRemove: document.getElementById("btn-remove-avatar"),
+  btnSave: document.getElementById("btn-save-avatar"),
 };
 
 const modalElements = {
@@ -229,9 +250,18 @@ async function checkAuth() {
   }
 }
 
+function renderUserAvatar(user) {
+  if (!user || !lobbyElements.userAvatar) return;
+  if (user.avatar) {
+    lobbyElements.userAvatar.innerHTML = `<img src="${escapeHTML(user.avatar)}" class="user-avatar-img" alt="${escapeHTML(user.nickname)}" />`;
+  } else {
+    lobbyElements.userAvatar.textContent = user.nickname ? user.nickname.charAt(0).toUpperCase() : "U";
+  }
+}
+
 function onAuthSuccess() {
   lobbyElements.userDisplayName.textContent = state.user.nickname;
-  lobbyElements.userAvatar.textContent = state.user.nickname.charAt(0).toUpperCase();
+  renderUserAvatar(state.user);
 
   // Carrega a lista de salas públicas disponíveis
   loadRoomsList();
@@ -298,6 +328,237 @@ if (lobbyElements.btnRefreshRooms) {
   lobbyElements.btnRefreshRooms.addEventListener("click", () => {
     loadRoomsList();
     showToast("Lista de salas atualizada!", "info");
+  });
+}
+
+// ====================================================
+// PERFIL DO USUÁRIO & FOTO DE PERFIL (LINK OU ARQUIVO)
+// ====================================================
+
+let pendingAvatarData = null; // Guarda a URL ou Base64 temporário para prévia
+
+function resizeImageFile(file, maxWidth = 256, maxHeight = 256) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith("image/")) {
+      return reject(new Error("O arquivo selecionado não é uma imagem válida."));
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const size = Math.min(img.width, img.height);
+        const startX = (img.width - size) / 2;
+        const startY = (img.height - size) / 2;
+
+        const targetSize = Math.min(size, maxWidth);
+        canvas.width = targetSize;
+        canvas.height = targetSize;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, startX, startY, size, size, 0, 0, targetSize, targetSize);
+
+        const dataUrl = canvas.toDataURL("image/webp", 0.85);
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error("Erro ao processar imagem."));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error("Erro ao ler arquivo do dispositivo."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function updateProfilePreview(avatarUrlOrData) {
+  pendingAvatarData = avatarUrlOrData;
+  if (!profileModalElements.previewImg || !profileModalElements.previewInitial) return;
+
+  if (avatarUrlOrData) {
+    profileModalElements.previewImg.src = avatarUrlOrData;
+    profileModalElements.previewImg.classList.remove("hidden");
+    profileModalElements.previewInitial.classList.add("hidden");
+  } else {
+    profileModalElements.previewImg.src = "";
+    profileModalElements.previewImg.classList.add("hidden");
+    profileModalElements.previewInitial.classList.remove("hidden");
+  }
+}
+
+function openProfileModal() {
+  if (!state.user || !profileModalElements.overlay) return;
+
+  const nick = state.user.nickname || "Usuário";
+  if (profileModalElements.previewNick) profileModalElements.previewNick.textContent = nick;
+  if (profileModalElements.previewInitial) profileModalElements.previewInitial.textContent = nick.charAt(0).toUpperCase();
+
+  // Define a foto atual
+  updateProfilePreview(state.user.avatar || null);
+
+  // Reseta inputs
+  if (profileModalElements.inputUrl) {
+    profileModalElements.inputUrl.value =
+      state.user.avatar && state.user.avatar.startsWith("http") ? state.user.avatar : "";
+  }
+  if (profileModalElements.inputFile) {
+    profileModalElements.inputFile.value = "";
+  }
+
+  // Abre na aba de arquivo por padrão
+  switchProfileTab("file");
+
+  profileModalElements.overlay.classList.remove("hidden");
+}
+
+function closeProfileModal() {
+  if (profileModalElements.overlay) {
+    profileModalElements.overlay.classList.add("hidden");
+  }
+  pendingAvatarData = null;
+}
+
+function switchProfileTab(tab) {
+  if (!profileModalElements.tabFile || !profileModalElements.tabUrl) return;
+
+  if (tab === "file") {
+    profileModalElements.tabFile.classList.add("active");
+    profileModalElements.tabUrl.classList.remove("active");
+    profileModalElements.sectionFile.classList.remove("hidden");
+    profileModalElements.sectionUrl.classList.add("hidden");
+  } else {
+    profileModalElements.tabUrl.classList.add("active");
+    profileModalElements.tabFile.classList.remove("active");
+    profileModalElements.sectionUrl.classList.remove("hidden");
+    profileModalElements.sectionFile.classList.add("hidden");
+    if (profileModalElements.inputUrl) {
+      setTimeout(() => profileModalElements.inputUrl.focus(), 50);
+    }
+  }
+}
+
+// Configura listeners do modal de perfil
+if (lobbyElements.userProfileBtn) {
+  lobbyElements.userProfileBtn.addEventListener("click", () => {
+    openProfileModal();
+  });
+}
+
+if (profileModalElements.closeBtn) {
+  profileModalElements.closeBtn.addEventListener("click", closeProfileModal);
+}
+if (profileModalElements.btnCancel) {
+  profileModalElements.btnCancel.addEventListener("click", closeProfileModal);
+}
+
+if (profileModalElements.tabFile) {
+  profileModalElements.tabFile.addEventListener("click", () => switchProfileTab("file"));
+}
+if (profileModalElements.tabUrl) {
+  profileModalElements.tabUrl.addEventListener("click", () => switchProfileTab("url"));
+}
+
+// Arquivo selecionado no input
+if (profileModalElements.inputFile) {
+  profileModalElements.inputFile.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    try {
+      showToast("Otimizando imagem...", "info");
+      const dataUrl = await resizeImageFile(file, 256, 256);
+      updateProfilePreview(dataUrl);
+      showToast("Foto pronta na prévia! Clique em 'Salvar Foto' para confirmar.", "success");
+    } catch (err) {
+      showToast(err.message, "error");
+    }
+  });
+}
+
+// Link digitado no input
+if (profileModalElements.inputUrl) {
+  profileModalElements.inputUrl.addEventListener("input", (e) => {
+    const url = e.target.value.trim();
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      updateProfilePreview(url);
+    } else if (!url) {
+      updateProfilePreview(state.user?.avatar || null);
+    }
+  });
+}
+
+// Submissão do formulário para salvar a foto
+if (profileModalElements.form) {
+  profileModalElements.form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    let avatarToSave = pendingAvatarData;
+    if (profileModalElements.tabUrl.classList.contains("active")) {
+      const urlVal = profileModalElements.inputUrl ? profileModalElements.inputUrl.value.trim() : "";
+      if (urlVal) avatarToSave = urlVal;
+    }
+
+    if (!avatarToSave) {
+      showToast("Escolha um arquivo de imagem ou informe um link antes de salvar.", "warning");
+      return;
+    }
+
+    try {
+      const btnSpan = profileModalElements.btnSave ? profileModalElements.btnSave.querySelector("span") : null;
+      if (profileModalElements.btnSave) profileModalElements.btnSave.disabled = true;
+      if (btnSpan) btnSpan.textContent = "Salvando...";
+
+      const res = await fetch("/api/auth/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${state.token}`,
+        },
+        body: JSON.stringify({ avatar: avatarToSave }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Falha ao salvar foto de perfil.");
+
+      state.user = data.user;
+      renderUserAvatar(state.user);
+      closeProfileModal();
+      showToast(data.message || "Foto de perfil atualizada com sucesso! 📸", "success");
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      if (profileModalElements.btnSave) profileModalElements.btnSave.disabled = false;
+      const btnSpan = profileModalElements.btnSave ? profileModalElements.btnSave.querySelector("span") : null;
+      if (btnSpan) btnSpan.textContent = "Salvar Foto";
+    }
+  });
+}
+
+// Botão Remover Foto
+if (profileModalElements.btnRemove) {
+  profileModalElements.btnRemove.addEventListener("click", async () => {
+    const confirmRemove = confirm("Deseja remover sua foto de perfil e voltar a usar a letra inicial?");
+    if (!confirmRemove) return;
+
+    try {
+      const res = await fetch("/api/auth/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${state.token}`,
+        },
+        body: JSON.stringify({ avatar: null }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao remover foto de perfil.");
+
+      state.user = data.user;
+      renderUserAvatar(state.user);
+      closeProfileModal();
+      showToast("Foto de perfil removida com sucesso.", "info");
+    } catch (err) {
+      showToast(err.message, "error");
+    }
   });
 }
 
@@ -1239,8 +1500,14 @@ function updateRoomState(data) {
     li.className = "user-row";
     const isMe = u.userId === state.user.id;
     const isCtrl = u.userId === currentController;
+    const avatarHtml = u.avatar
+      ? `<img src="${escapeHTML(u.avatar)}" class="u-avatar-img" alt="${escapeHTML(u.nickname)}" />`
+      : `<span class="u-avatar-circle">${escapeHTML(u.nickname.charAt(0).toUpperCase())}</span>`;
     li.innerHTML = `
-      <span class="u-name">${u.nickname} ${isMe ? "(Você)" : ""}</span>
+      <div class="u-info">
+        ${avatarHtml}
+        <span class="u-name">${escapeHTML(u.nickname)} ${isMe ? "(Você)" : ""}</span>
+      </div>
       ${isCtrl ? '<span class="u-tag">🎮 No Controle</span>' : ""}
     `;
     roomElements.usersListBox.appendChild(li);
@@ -1613,6 +1880,9 @@ function appendChatMessage(msg) {
   const senderName = escapeHTML(msg.user || "Anônimo");
   const firstLetter = (msg.user ? msg.user.charAt(0).toUpperCase() : "?");
   const textHtml = escapeHTML(msg.text);
+  const avatarHtml = msg.avatar
+    ? `<img src="${escapeHTML(msg.avatar)}" class="chat-avatar-img" alt="${senderName}" />`
+    : firstLetter;
 
   if (isMe) {
     row.innerHTML = `
@@ -1622,7 +1892,7 @@ function appendChatMessage(msg) {
     `;
   } else {
     row.innerHTML = `
-      <div class="chat-bubble-avatar">${firstLetter}</div>
+      <div class="chat-bubble-avatar">${avatarHtml}</div>
       <div class="chat-bubble-body">
         <span class="chat-sender-name">${senderName}</span>
         <div class="chat-bubble other-bubble">${textHtml}</div>
