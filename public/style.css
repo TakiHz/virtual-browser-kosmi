@@ -97,7 +97,7 @@ body {
    VIEW CONTROLLER
    ==================================================== */
 .view-screen {
-  display: none;
+  display: none !important;
   width: 100%;
   min-height: 100vh;
   opacity: 0;
@@ -106,7 +106,7 @@ body {
 }
 
 .view-screen.active {
-  display: flex;
+  display: flex !important;
   flex-direction: column;
   opacity: 1;
   transform: translateY(0);
@@ -953,8 +953,12 @@ body {
 /* ====================================================
    VIEW 3: SALA DO NAVEGADOR VIRTUAL (DESKTOP & MOBILE)
    ==================================================== */
-#view-room {
-  display: flex;
+#view-room:not(.active) {
+  display: none !important;
+}
+
+#view-room.active {
+  display: flex !important;
   flex-direction: row;
   width: 100vw;
   height: 100vh;
@@ -1783,7 +1787,11 @@ body {
     display: contents !important;
   }
 
-  #view-room {
+  #view-room:not(.active) {
+    display: none !important;
+  }
+
+  #view-room.active {
     display: flex !important;
     flex-direction: column !important;
     width: 100vw !important;
