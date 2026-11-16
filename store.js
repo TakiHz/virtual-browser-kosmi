@@ -39,7 +39,15 @@ function saveJSON(file, data) {
 
 // In-memory cache com persistência local em disco
 const localUsers = new Map(Object.entries(loadJSON(USERS_FILE, {})));
-const localRooms = new Map(Object.entries(loadJSON(ROOMS_FILE, {})));
+const rawRooms = loadJSON(ROOMS_FILE, {});
+const localRooms = new Map();
+for (const [code, r] of Object.entries(rawRooms)) {
+  localRooms.set(code, {
+    ...r,
+    clients: new Set(),
+    chatHistory: Array.isArray(r.chatHistory) ? r.chatHistory : [],
+  });
+}
 const sessions = new Map(Object.entries(loadJSON(SESSIONS_FILE, {})));
 
 let pool = null;
@@ -77,6 +85,16 @@ export async function initDatabase() {
         admin_token TEXT NOT NULL,
         created_at BIGINT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS room_messages (
+        id SERIAL PRIMARY KEY,
+        room_code TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        nickname TEXT NOT NULL,
+        avatar TEXT,
+        text TEXT NOT NULL,
+        timestamp BIGINT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_room_messages_code ON room_messages(room_code);
       CREATE TABLE IF NOT EXISTS sessions (
         token TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
@@ -85,7 +103,7 @@ export async function initDatabase() {
       );
       ALTER TABLE sessions ADD COLUMN IF NOT EXISTS avatar TEXT;
     `);
-    console.log("✅ Tabelas permanentes 'users', 'rooms' e 'sessions' verificadas no PostgreSQL.");
+    console.log("✅ Tabelas permanentes 'users', 'rooms', 'room_messages' e 'sessions' verificadas no PostgreSQL.");
 
     // Restaura sessões ativas do banco
     const sessRes = await pool.query("SELECT * FROM sessions");
@@ -118,6 +136,7 @@ function saveLocalRooms() {
       embedUrl: r.embedUrl,
       adminToken: r.adminToken,
       createdAt: r.createdAt,
+      chatHistory: Array.isArray(r.chatHistory) ? r.chatHistory.slice(-100) : [],
     };
   }
   saveJSON(ROOMS_FILE, serializable);
@@ -306,6 +325,7 @@ export async function createRoomStore(code, data) {
     currentController: null,
     controllerName: null,
     clients: new Set(),
+    chatHistory: [],
   };
 
   localRooms.set(codeUpper, room);
@@ -334,7 +354,9 @@ export async function getRoom(code) {
   if (!codeUpper) return null;
 
   if (localRooms.has(codeUpper)) {
-    return localRooms.get(codeUpper);
+    const room = localRooms.get(codeUpper);
+    if (!room.chatHistory) room.chatHistory = [];
+    return room;
   }
 
   if (pool) {
@@ -356,7 +378,27 @@ export async function getRoom(code) {
           currentController: null,
           controllerName: null,
           clients: new Set(),
+          chatHistory: [],
         };
+
+        // Carrega histórico recente de mensagens do banco
+        try {
+          const msgRes = await pool.query(
+            "SELECT user_id, nickname, avatar, text, timestamp FROM room_messages WHERE UPPER(TRIM(room_code)) = $1 ORDER BY timestamp ASC LIMIT 100",
+            [codeUpper]
+          );
+          room.chatHistory = msgRes.rows.map((m) => ({
+            type: "chat",
+            userId: m.user_id,
+            user: m.nickname,
+            avatar: m.avatar || null,
+            text: m.text,
+            timestamp: Number(m.timestamp),
+          }));
+        } catch (msgErr) {
+          console.warn("Aviso ao carregar mensagens da sala:", msgErr.message);
+        }
+
         localRooms.set(codeUpper, room);
         return room;
       }
@@ -481,12 +523,87 @@ export async function deleteRoom(code) {
 
   if (pool) {
     try {
+      await pool.query("DELETE FROM room_messages WHERE UPPER(TRIM(room_code)) = $1", [codeUpper]);
       await pool.query("DELETE FROM rooms WHERE UPPER(TRIM(code)) = $1", [codeUpper]);
-      console.log(`🗑️ Sala ${codeUpper} excluída com sucesso do PostgreSQL.`);
+      console.log(`🗑️ Sala ${codeUpper} e histórico de mensagens excluídos com sucesso do PostgreSQL.`);
     } catch (err) {
       console.error(`Erro ao deletar sala ${codeUpper} do banco:`, err.message);
     }
   }
 
   return room || true;
+}
+
+export async function addRoomChatMessage(code, messageObj) {
+  if (!code || !messageObj) return null;
+  const codeUpper = String(code).trim().replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  const room = await getRoom(codeUpper);
+  if (!room) return null;
+
+  if (!Array.isArray(room.chatHistory)) {
+    room.chatHistory = [];
+  }
+
+  const msg = {
+    type: "chat",
+    userId: messageObj.userId || "",
+    user: messageObj.user || messageObj.nickname || "Anônimo",
+    avatar: messageObj.avatar || null,
+    text: String(messageObj.text || "").substring(0, 500),
+    timestamp: messageObj.timestamp || Date.now(),
+  };
+
+  room.chatHistory.push(msg);
+  if (room.chatHistory.length > 100) {
+    room.chatHistory.shift();
+  }
+
+  if (pool) {
+    try {
+      await pool.query(
+        "INSERT INTO room_messages (room_code, user_id, nickname, avatar, text, timestamp) VALUES ($1, $2, $3, $4, $5, $6)",
+        [codeUpper, msg.userId, msg.user, msg.avatar, msg.text, msg.timestamp]
+      );
+    } catch (err) {
+      console.error("Erro ao salvar mensagem no PostgreSQL:", err.message);
+    }
+  } else {
+    saveLocalRooms();
+  }
+
+  return msg;
+}
+
+export async function getRoomChatHistory(code) {
+  if (!code) return [];
+  const codeUpper = String(code).trim().replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  const room = await getRoom(codeUpper);
+  if (room && Array.isArray(room.chatHistory) && room.chatHistory.length > 0) {
+    return room.chatHistory;
+  }
+
+  if (pool) {
+    try {
+      const res = await pool.query(
+        "SELECT user_id, nickname, avatar, text, timestamp FROM room_messages WHERE UPPER(TRIM(room_code)) = $1 ORDER BY timestamp ASC LIMIT 100",
+        [codeUpper]
+      );
+      const messages = res.rows.map((m) => ({
+        type: "chat",
+        userId: m.user_id,
+        user: m.nickname,
+        avatar: m.avatar || null,
+        text: m.text,
+        timestamp: Number(m.timestamp),
+      }));
+      if (room) {
+        room.chatHistory = messages;
+      }
+      return messages;
+    } catch (err) {
+      console.error("Erro ao recuperar histórico de mensagens do PostgreSQL:", err.message);
+    }
+  }
+
+  return room?.chatHistory || [];
 }

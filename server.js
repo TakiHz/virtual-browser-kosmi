@@ -20,6 +20,8 @@ import {
   deleteRoom,
   destroySession,
   updateUserAvatar,
+  addRoomChatMessage,
+  getRoomChatHistory,
 } from "./store.js";
 
 dotenv.config();
@@ -335,6 +337,24 @@ app.get("/api/rooms/:code", authMiddleware, async (req, res) => {
   return handleRoomLookup(req.params.code, req, res);
 });
 
+// Obter histórico de mensagens da sala
+app.get("/api/rooms/:code/messages", authMiddleware, async (req, res) => {
+  try {
+    const code = sanitizeRoomCode(req.params.code);
+    if (!code) {
+      return res.status(400).json({ success: false, error: "Código da sala não fornecido." });
+    }
+    const room = await getRoom(code);
+    if (!room) {
+      return res.status(404).json({ success: false, error: "Sala não encontrada." });
+    }
+    const messages = await getRoomChatHistory(code);
+    res.json({ success: true, messages });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 async function handleRoomLookup(rawCode, req, res) {
   const code = sanitizeRoomCode(rawCode);
   if (!code) {
@@ -510,27 +530,45 @@ wss.on("connection", async (ws, req) => {
   }
 
   broadcastRoomState(room);
+
+  // Envia histórico de mensagens recente para o participante recém-conectado
+  try {
+    const history = await getRoomChatHistory(room.code);
+    if (history && history.length > 0) {
+      ws.send(
+        JSON.stringify({
+          type: "chat_history",
+          messages: history,
+        })
+      );
+    }
+  } catch (err) {
+    console.error("[Erro ao enviar histórico de mensagens]:", err.message);
+  }
+
   broadcastMessage(room, {
     type: "system",
     text: `${user.nickname} entrou na sala.`,
     timestamp: Date.now(),
   });
 
-  ws.on("message", (raw) => {
+  ws.on("message", async (raw) => {
     try {
       const data = JSON.parse(raw.toString());
 
       switch (data.type) {
         case "chat":
           if (data.text && typeof data.text === "string" && data.text.trim()) {
-            broadcastMessage(room, {
+            const chatMsg = {
               type: "chat",
               user: user.nickname,
               userId: user.id,
               avatar: user.avatar || null,
               text: data.text.trim().substring(0, 500),
               timestamp: Date.now(),
-            });
+            };
+            await addRoomChatMessage(room.code, chatMsg);
+            broadcastMessage(room, chatMsg);
           }
           break;
 
@@ -672,12 +710,12 @@ function broadcastMessage(room, messageObj) {
 
 // Suporte para rotas de sala como /room/:code
 app.get("/room/:code", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile("index.html", { root: path.join(__dirname, "public") });
 });
 
 // Fallback universal para SPA (compatível com Express 5)
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile("index.html", { root: path.join(__dirname, "public") });
 });
 
 // Job contínuo: monitora e encerra QUALQUER sala que ficar vazia por 3 minutos (180s)

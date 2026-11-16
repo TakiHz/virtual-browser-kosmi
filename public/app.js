@@ -1035,6 +1035,15 @@ async function joinRoom(rawCode) {
       roomElements.passDisplay.textContent = room.code;
     }
 
+    // Inicializa a caixa de chat com mensagem padrão de boas-vindas
+    if (roomElements.chatMessagesBox) {
+      roomElements.chatMessagesBox.innerHTML = `
+        <div class="chat-item system">
+          <span>Bem-vindo à sala! Envie o link ou senha para seus amigos.</span>
+        </div>
+      `;
+    }
+
     // Configura o placeholder de carregamento
     roomElements.browserMount.innerHTML = `
       <div class="browser-placeholder">
@@ -1432,6 +1441,10 @@ function connectRoomWebSocket(code) {
       switch (data.type) {
         case "room_state":
           updateRoomState(data);
+          break;
+
+        case "chat_history":
+          renderChatHistory(data.messages);
           break;
 
         case "chat":
@@ -1866,6 +1879,22 @@ roomElements.formChat.addEventListener("submit", (e) => {
   state.ws.send(JSON.stringify({ type: "chat", text }));
   roomElements.chatInputText.value = "";
 });
+
+function renderChatHistory(messages) {
+  if (!roomElements.chatMessagesBox) return;
+
+  roomElements.chatMessagesBox.innerHTML = `
+    <div class="chat-item system">
+      <span>Bem-vindo à sala! Envie o link ou senha para seus amigos.</span>
+    </div>
+  `;
+
+  if (Array.isArray(messages) && messages.length > 0) {
+    messages.forEach((msg) => {
+      appendChatMessage(msg);
+    });
+  }
+}
 
 function appendChatMessage(msg) {
   const isMe = Boolean(
