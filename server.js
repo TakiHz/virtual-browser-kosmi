@@ -206,40 +206,11 @@ function generateRoomCode() {
   return code;
 }
 
-async function requestHyperbeamVM(startUrl = "https://www.google.com.br", retries = 2) {
+async function requestHyperbeamVM(startUrl = "https://www.youtube.com", retries = 2) {
   if (!HYPERBEAM_API_KEY) {
     throw new Error(
       "A chave HYPERBEAM_API_KEY não foi configurada no servidor. Obtenha uma chave em https://hyperbeam.com e adicione nas variáveis de ambiente."
     );
-  }
-
-  // Se o link for do YouTube sem parâmetros de idioma, adiciona região Brasil e português
-  if (startUrl.includes("youtube.com") && !startUrl.includes("gl=") && !startUrl.includes("hl=")) {
-    const sep = startUrl.includes("?") ? "&" : "?";
-    startUrl = `${startUrl}${sep}gl=BR&hl=pt`;
-  }
-
-  const vmPayload = {
-    start_url: startUrl,
-    kiosk: false,
-    ublock: true, // Bloqueio nativo de anúncios, pop-ups invasivos e scripts maliciosos (uBlock Origin)
-    locale: {
-      language: "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-      country: "BR", // Localização e idioma do Brasil nativos no Chromium
-    },
-    timeout: {
-      offline: 300, // Desliga 5 minutos após o último sair para economizar recursos
-      warning: 60,
-    },
-  };
-
-  // Suporte opcional a Proxy Brasileiro via variável de ambiente HYPERBEAM_PROXY_PAC
-  if (process.env.HYPERBEAM_PROXY_PAC) {
-    vmPayload.http_proxy = {
-      pac: process.env.HYPERBEAM_PROXY_PAC,
-      ...(process.env.HYPERBEAM_PROXY_USER ? { username: process.env.HYPERBEAM_PROXY_USER } : {}),
-      ...(process.env.HYPERBEAM_PROXY_PASS ? { password: process.env.HYPERBEAM_PROXY_PASS } : {}),
-    };
   }
 
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -249,7 +220,15 @@ async function requestHyperbeamVM(startUrl = "https://www.google.com.br", retrie
         Authorization: `Bearer ${HYPERBEAM_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(vmPayload),
+      body: JSON.stringify({
+        start_url: startUrl,
+        kiosk: false,
+        ublock: true, // Bloqueio nativo de anúncios, pop-ups invasivos e scripts maliciosos (uBlock Origin)
+        timeout: {
+          offline: 300, // Desliga 5 minutos após o último sair para economizar recursos
+          warning: 60,
+        },
+      }),
     });
 
     if (response.ok) {
@@ -276,7 +255,7 @@ async function requestHyperbeamVM(startUrl = "https://www.google.com.br", retrie
 app.post("/api/rooms", authMiddleware, async (req, res) => {
   try {
     let { startUrl } = req.body || {};
-    startUrl = startUrl?.trim() || "https://www.google.com.br";
+    startUrl = startUrl?.trim() || "https://www.youtube.com";
 
     // REGRA: Limite estrito de apenas 1 sala ativa por conta
     const existingRoom = await getRoomByHostNickname(req.user.nickname);
