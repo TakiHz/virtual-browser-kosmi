@@ -42,6 +42,8 @@ const lobbyElements = {
   btnCreateText: document.getElementById("btn-create-text"),
   formJoin: document.getElementById("form-join-room"),
   joinRoomCode: document.getElementById("join-room-code"),
+  sectionRecentRooms: document.getElementById("section-recent-rooms"),
+  recentRoomsGrid: document.getElementById("recent-rooms-grid"),
 };
 
 const roomElements = {
@@ -200,6 +202,9 @@ function onAuthSuccess() {
   lobbyElements.userDisplayName.textContent = state.user.nickname;
   lobbyElements.userAvatar.textContent = state.user.nickname.charAt(0).toUpperCase();
 
+  // Carrega salas ativas recentes para reutilização
+  loadRecentRooms();
+
   // Se o usuário entrou por link de convite, entra direto na sala!
   if (state.pendingInviteCode) {
     const code = state.pendingInviteCode;
@@ -207,6 +212,43 @@ function onAuthSuccess() {
     joinRoom(code);
   } else {
     showScreen("lobby");
+  }
+}
+
+// ====================================================
+// SALAS RECENTES & REUTILIZAÇÃO (Evita Rate Limit)
+// ====================================================
+async function loadRecentRooms() {
+  if (!state.token || !lobbyElements.sectionRecentRooms) return;
+  try {
+    const res = await fetch("/api/rooms-recent", {
+      headers: { Authorization: `Bearer ${state.token}` },
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.rooms && data.rooms.length > 0) {
+      lobbyElements.recentRoomsGrid.innerHTML = "";
+      data.rooms.forEach((r) => {
+        const card = document.createElement("div");
+        card.className = "recent-room-pill";
+        card.innerHTML = `
+          <div class="recent-room-info">
+            <span class="code">${r.code}</span>
+            <span class="host">Host: ${escapeHTML(r.hostNickname)}</span>
+          </div>
+          <button class="btn-enter-recent" type="button">Entrar →</button>
+        `;
+        card.querySelector(".btn-enter-recent").addEventListener("click", () => {
+          joinRoom(r.code);
+        });
+        lobbyElements.recentRoomsGrid.appendChild(card);
+      });
+      lobbyElements.sectionRecentRooms.classList.remove("hidden");
+    } else {
+      lobbyElements.sectionRecentRooms.classList.add("hidden");
+    }
+  } catch (err) {
+    console.warn("Erro ao carregar salas recentes:", err);
   }
 }
 
@@ -317,9 +359,29 @@ lobbyElements.formCreate.addEventListener("submit", async (e) => {
     joinRoom(data.code);
   } catch (err) {
     showToast(err.message, "error");
+
+    // Se bater no limite de taxa temporário, atualiza as salas disponíveis e inicia cooldown visível
+    if (err.message.includes("Limite temporário") || err.message.includes("429")) {
+      loadRecentRooms();
+      let cooldown = 60;
+      lobbyElements.btnCreateRoom.disabled = true;
+      const interval = setInterval(() => {
+        cooldown--;
+        if (cooldown <= 0) {
+          clearInterval(interval);
+          lobbyElements.btnCreateRoom.disabled = false;
+          lobbyElements.btnCreateText.textContent = "Criar Sala Virtual";
+        } else {
+          lobbyElements.btnCreateText.textContent = `Aguarde ${cooldown}s (Cooldown)...`;
+        }
+      }, 1000);
+      return;
+    }
   } finally {
-    lobbyElements.btnCreateRoom.disabled = false;
-    lobbyElements.btnCreateText.textContent = "Criar Sala Virtual";
+    if (!lobbyElements.btnCreateRoom.textContent.includes("Cooldown")) {
+      lobbyElements.btnCreateRoom.disabled = false;
+      lobbyElements.btnCreateText.textContent = "Criar Sala Virtual";
+    }
   }
 });
 
@@ -595,6 +657,7 @@ roomElements.btnLeave.addEventListener("click", () => {
   }
   state.currentRoom = null;
   window.history.pushState({}, "", "/");
+  loadRecentRooms();
   showScreen("lobby");
 });
 

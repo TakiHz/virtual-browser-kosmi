@@ -270,3 +270,30 @@ export async function getRoom(code) {
 export function getAllRooms() {
   return localRooms;
 }
+
+export async function getRecentActiveRooms(limit = 6) {
+  if (pool) {
+    try {
+      const res = await pool.query(
+        "SELECT code, host_nickname, created_at FROM rooms ORDER BY created_at DESC LIMIT $1",
+        [limit]
+      );
+      return res.rows.map((r) => ({
+        code: r.code,
+        hostNickname: r.host_nickname,
+        createdAt: Number(r.created_at),
+      }));
+    } catch (e) {
+      console.error("Erro ao listar salas do banco:", e.message);
+    }
+  }
+
+  return Array.from(localRooms.values())
+    .slice(-limit)
+    .reverse()
+    .map((r) => ({
+      code: r.code,
+      hostNickname: r.hostNickname,
+      createdAt: r.createdAt,
+    }));
+}

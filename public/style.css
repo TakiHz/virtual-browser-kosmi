@@ -500,6 +500,96 @@ body {
   text-align: center;
 }
 
+/* SALAS RECENTES NO LOBBY */
+.recent-rooms-container {
+  margin-top: 36px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.recent-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.recent-header h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.recent-header .subtext {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.recent-rooms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.recent-room-pill {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: var(--transition);
+}
+
+.recent-room-pill:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.recent-room-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent-room-info .code {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #a5b4fc;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+}
+
+.recent-room-info .host {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.btn-enter-recent {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-family: var(--font-main);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btn-enter-recent:hover {
+  background: var(--accent-hover);
+}
+
 /* ====================================================
    VIEW 3: SALA DO NAVEGADOR VIRTUAL
    ==================================================== */

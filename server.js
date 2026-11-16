@@ -14,6 +14,7 @@ import {
   createRoomStore,
   getRoom,
   getAllRooms,
+  getRecentActiveRooms,
 } from "./store.js";
 
 dotenv.config();
@@ -137,36 +138,49 @@ function generateRoomCode() {
   return code;
 }
 
-async function requestHyperbeamVM(startUrl = "https://www.youtube.com") {
+async function requestHyperbeamVM(startUrl = "https://www.youtube.com", retries = 2) {
   if (!HYPERBEAM_API_KEY) {
     throw new Error(
       "A chave HYPERBEAM_API_KEY não foi configurada no servidor. Obtenha uma chave em https://hyperbeam.com e adicione nas variáveis de ambiente."
     );
   }
 
-  const response = await fetch("https://engine.hyperbeam.com/v0/vm", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${HYPERBEAM_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      start_url: startUrl,
-      kiosk: false,
-      ublock: true, // Bloqueio nativo de anúncios, pop-ups invasivos e scripts maliciosos (uBlock Origin)
-      timeout: {
-        offline: 300, // Desliga 5 minutos após o último sair para economizar recursos
-        warning: 60,
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const response = await fetch("https://engine.hyperbeam.com/v0/vm", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${HYPERBEAM_API_KEY}`,
+        "Content-Type": "application/json",
       },
-    }),
-  });
+      body: JSON.stringify({
+        start_url: startUrl,
+        kiosk: false,
+        ublock: true, // Bloqueio nativo de anúncios, pop-ups invasivos e scripts maliciosos (uBlock Origin)
+        timeout: {
+          offline: 300, // Desliga 5 minutos após o último sair para economizar recursos
+          warning: 60,
+        },
+      }),
+    });
 
-  if (!response.ok) {
+    if (response.ok) {
+      return await response.json();
+    }
+
+    if (response.status === 429) {
+      if (attempt < retries) {
+        console.warn(`[Hyperbeam 429]: Aguardando 3 segundos antes da tentativa ${attempt + 1}...`);
+        await new Promise((r) => setTimeout(r, 3000));
+        continue;
+      }
+      throw new Error(
+        "Limite temporário atingido: O provedor Hyperbeam limita a criação de muitas máquinas virtuais em sequência no plano gratuito. Aguarde cerca de 1 a 2 minutos para criar outra sala, ou entre em uma das salas já criadas!"
+      );
+    }
+
     const errorText = await response.text();
     throw new Error(`Erro na API Hyperbeam (${response.status}): ${errorText}`);
   }
-
-  return await response.json();
 }
 
 // Criar nova sala
@@ -272,6 +286,16 @@ async function handleRoomLookup(rawCode, req, res) {
     onlineCount: room.clients ? room.clients.size : 0,
   });
 }
+
+// Listar salas ativas recentes
+app.get("/api/rooms-recent", authMiddleware, async (req, res) => {
+  try {
+    const rooms = await getRecentActiveRooms(6);
+    res.json({ success: true, rooms });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // Health check para Render
 app.get("/api/health", (req, res) => {
