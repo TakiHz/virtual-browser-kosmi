@@ -353,9 +353,31 @@ export async function getRoom(code) {
   const codeUpper = String(code).trim().replace(/[^A-Za-z0-9]/g, "").toUpperCase();
   if (!codeUpper) return null;
 
+  // Se não estiver conectado ao PostgreSQL, sincroniza com o arquivo local rooms.json
+  if (!pool) {
+    const freshRooms = loadJSON(ROOMS_FILE, {});
+    if (!freshRooms[codeUpper]) {
+      localRooms.delete(codeUpper);
+      return null;
+    }
+  }
+
   if (localRooms.has(codeUpper)) {
     const room = localRooms.get(codeUpper);
     if (!room.chatHistory) room.chatHistory = [];
+    return room;
+  }
+
+  // Fallback: sincroniza com o arquivo local rooms.json caso tenha sido criado por outro processo
+  const freshRooms = loadJSON(ROOMS_FILE, {});
+  if (freshRooms[codeUpper]) {
+    const r = freshRooms[codeUpper];
+    const room = {
+      ...r,
+      clients: new Set(),
+      chatHistory: Array.isArray(r.chatHistory) ? r.chatHistory : [],
+    };
+    localRooms.set(codeUpper, room);
     return room;
   }
 
@@ -417,6 +439,20 @@ export async function getRoomByHostNickname(nickname) {
   // 1. Procura no cache de salas ativas
   for (const room of localRooms.values()) {
     if (room.hostNickname && room.hostNickname.trim().toLowerCase() === nickLower) {
+      return room;
+    }
+  }
+
+  // 2. Procura no arquivo local rooms.json
+  const freshRooms = loadJSON(ROOMS_FILE, {});
+  for (const r of Object.values(freshRooms)) {
+    if (r.hostNickname && r.hostNickname.trim().toLowerCase() === nickLower) {
+      const room = {
+        ...r,
+        clients: new Set(),
+        chatHistory: Array.isArray(r.chatHistory) ? r.chatHistory : [],
+      };
+      localRooms.set(room.code, room);
       return room;
     }
   }
