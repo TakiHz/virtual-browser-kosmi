@@ -206,7 +206,7 @@ function generateRoomCode() {
   return code;
 }
 
-async function requestHyperbeamVM(startUrl = "https://www.youtube.com", retries = 2) {
+async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries = 2) {
   if (!HYPERBEAM_API_KEY) {
     throw new Error(
       "A chave HYPERBEAM_API_KEY não foi configurada no servidor. Obtenha uma chave em https://hyperbeam.com e adicione nas variáveis de ambiente."
@@ -255,7 +255,7 @@ async function requestHyperbeamVM(startUrl = "https://www.youtube.com", retries 
 app.post("/api/rooms", authMiddleware, async (req, res) => {
   try {
     let { startUrl } = req.body || {};
-    startUrl = startUrl?.trim() || "https://www.youtube.com";
+    startUrl = startUrl?.trim() || "https://pobreeflix.com/";
 
     // REGRA: Limite estrito de apenas 1 sala ativa por conta
     const existingRoom = await getRoomByHostNickname(req.user.nickname);

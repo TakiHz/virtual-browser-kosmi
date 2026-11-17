@@ -110,22 +110,22 @@
             <div class="field-group">
               <div class="field-label-row">
                 <label for="create-start-url">URL Inicial (Site ou Streaming)</label>
-                <span class="field-hint">YouTube ou Pobreeflix</span>
+                <span class="field-hint">Pobreeflix ou YouTube</span>
               </div>
               <div class="url-input-container">
-                <input type="text" id="create-start-url" value="https://www.youtube.com" placeholder="Cole link do YouTube, Pobreeflix ou .m3u8..." />
-                <button type="button" class="btn-url-quick-alt" id="btn-toggle-quick-alt" title="Alternar para Pobreeflix (alternativa ao YouTube)">
-                  🍿 Pobreeflix
+                <input type="text" id="create-start-url" value="https://pobreeflix.com/" placeholder="Cole link do Pobreeflix, YouTube ou .m3u8..." />
+                <button type="button" class="btn-url-quick-alt" id="btn-toggle-quick-alt" title="Alternar para YouTube (alternativa ao Pobreeflix)">
+                  ▶️ YouTube
                 </button>
               </div>
               <div class="url-choice-chips">
-                <button type="button" class="choice-chip active" id="chip-url-youtube" data-url="https://www.youtube.com" title="Usar YouTube como início">
-                  <span class="chip-icon">▶️</span>
-                  <span class="chip-text">YouTube</span>
-                </button>
-                <button type="button" class="choice-chip" id="chip-url-pobreeflix" data-url="https://pobreeflix.com/" title="Usar Pobreeflix como alternativa ao YouTube">
+                <button type="button" class="choice-chip active" id="chip-url-pobreeflix" data-url="https://pobreeflix.com/" title="Usar Pobreeflix como primeira opção">
                   <span class="chip-icon">🍿</span>
                   <span class="chip-text">Pobreeflix</span>
+                </button>
+                <button type="button" class="choice-chip" id="chip-url-youtube" data-url="https://www.youtube.com" title="Usar YouTube">
+                  <span class="chip-icon">▶️</span>
+                  <span class="chip-text">YouTube</span>
                 </button>
               </div>
             </div>
@@ -280,11 +280,11 @@
           <input type="text" id="input-room-nav-url" placeholder="Navegar para site ou stream .m3u8..." autocomplete="off" />
           <button type="submit" class="btn-nav-go">Ir</button>
           <div class="room-nav-quick-group">
-            <button type="button" class="btn-room-nav-quick" id="btn-room-nav-youtube" data-url="https://www.youtube.com" title="Navegar para o YouTube">
-              ▶️ YouTube
-            </button>
             <button type="button" class="btn-room-nav-quick" id="btn-room-nav-pobreeflix" data-url="https://pobreeflix.com/" title="Navegar para Pobreeflix (Filmes e Séries)">
               🍿 Pobreeflix
+            </button>
+            <button type="button" class="btn-room-nav-quick" id="btn-room-nav-youtube" data-url="https://www.youtube.com" title="Navegar para o YouTube">
+              ▶️ YouTube
             </button>
           </div>
         </form>

@@ -904,13 +904,21 @@ lobbyElements.btnLogout.addEventListener("click", async () => {
 });
 
 // ====================================================
+// ATALHOS & ALTERNATIVAS DE STREAMING (POBREEFLIX & YOUTUBE)
+// ====================================================
+const PRESET_URLS = {
+  POBREEFLIX: "https://pobreeflix.com/",
+  YOUTUBE: "https://www.youtube.com",
+};
+
+// ====================================================
 // LOBBY: CRIAR E ENTRAR EM SALAS
 // ====================================================
 
 // Criar Nova Sala
 lobbyElements.formCreate.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const startUrl = lobbyElements.createStartUrl.value.trim() || "https://www.youtube.com";
+  const startUrl = lobbyElements.createStartUrl.value.trim() || PRESET_URLS.POBREEFLIX;
 
   try {
     lobbyElements.btnCreateRoom.disabled = true;
@@ -966,34 +974,26 @@ lobbyElements.formCreate.addEventListener("submit", async (e) => {
   }
 });
 
-// ====================================================
-// ATALHOS & ALTERNATIVAS DE STREAMING (YOUTUBE & POBREEFLIX)
-// ====================================================
-const PRESET_URLS = {
-  YOUTUBE: "https://www.youtube.com",
-  POBREEFLIX: "https://pobreeflix.com/",
-};
-
 function syncUrlPresets(currentUrl) {
   const norm = (currentUrl || "").trim().toLowerCase();
   const isPobree = norm.includes("pobreeflix");
   const isYt = norm.includes("youtube.com") || norm.includes("youtu.be");
 
-  if (lobbyElements.chipUrlYoutube) {
-    lobbyElements.chipUrlYoutube.classList.toggle("active", isYt);
-  }
   if (lobbyElements.chipUrlPobreeflix) {
     lobbyElements.chipUrlPobreeflix.classList.toggle("active", isPobree);
+  }
+  if (lobbyElements.chipUrlYoutube) {
+    lobbyElements.chipUrlYoutube.classList.toggle("active", isYt);
   }
 
   // O botão do lado funciona como alternador direto
   if (lobbyElements.btnToggleQuickAlt) {
     if (isPobree) {
       lobbyElements.btnToggleQuickAlt.innerHTML = "▶️ YouTube";
-      lobbyElements.btnToggleQuickAlt.title = "Alternar para YouTube";
+      lobbyElements.btnToggleQuickAlt.title = "Alternar para YouTube (alternativa ao Pobreeflix)";
     } else {
       lobbyElements.btnToggleQuickAlt.innerHTML = "🍿 Pobreeflix";
-      lobbyElements.btnToggleQuickAlt.title = "Alternar para Pobreeflix (alternativa ao YouTube)";
+      lobbyElements.btnToggleQuickAlt.title = "Alternar para Pobreeflix (primeira opção)";
     }
   }
 }
@@ -1002,6 +1002,8 @@ if (lobbyElements.createStartUrl) {
   lobbyElements.createStartUrl.addEventListener("input", () => {
     syncUrlPresets(lobbyElements.createStartUrl.value);
   });
+  // Sincroniza estado inicial (Pobreeflix ativo por padrão)
+  syncUrlPresets(lobbyElements.createStartUrl.value || PRESET_URLS.POBREEFLIX);
 }
 
 if (lobbyElements.btnToggleQuickAlt) {
