@@ -39,6 +39,9 @@ const lobbyElements = {
   btnLogout: document.getElementById("btn-logout"),
   formCreate: document.getElementById("form-create-room"),
   createStartUrl: document.getElementById("create-start-url"),
+  btnToggleQuickAlt: document.getElementById("btn-toggle-quick-alt"),
+  chipUrlYoutube: document.getElementById("chip-url-youtube"),
+  chipUrlPobreeflix: document.getElementById("chip-url-pobreeflix"),
   btnCreateRoom: document.getElementById("btn-create-room"),
   btnCreateText: document.getElementById("btn-create-text"),
   formJoin: document.getElementById("form-join-room"),
@@ -122,6 +125,8 @@ const roomElements = {
   usersListBox: document.getElementById("users-list-box"),
   formNav: document.getElementById("form-room-nav"),
   inputNavUrl: document.getElementById("input-room-nav-url"),
+  btnRoomNavYoutube: document.getElementById("btn-room-nav-youtube"),
+  btnRoomNavPobreeflix: document.getElementById("btn-room-nav-pobreeflix"),
 };
 
 // ====================================================
@@ -961,6 +966,71 @@ lobbyElements.formCreate.addEventListener("submit", async (e) => {
   }
 });
 
+// ====================================================
+// ATALHOS & ALTERNATIVAS DE STREAMING (YOUTUBE & POBREEFLIX)
+// ====================================================
+const PRESET_URLS = {
+  YOUTUBE: "https://www.youtube.com",
+  POBREEFLIX: "https://pobreeflix.com/",
+};
+
+function syncUrlPresets(currentUrl) {
+  const norm = (currentUrl || "").trim().toLowerCase();
+  const isPobree = norm.includes("pobreeflix");
+  const isYt = norm.includes("youtube.com") || norm.includes("youtu.be");
+
+  if (lobbyElements.chipUrlYoutube) {
+    lobbyElements.chipUrlYoutube.classList.toggle("active", isYt);
+  }
+  if (lobbyElements.chipUrlPobreeflix) {
+    lobbyElements.chipUrlPobreeflix.classList.toggle("active", isPobree);
+  }
+
+  // O botão do lado funciona como alternador direto
+  if (lobbyElements.btnToggleQuickAlt) {
+    if (isPobree) {
+      lobbyElements.btnToggleQuickAlt.innerHTML = "▶️ YouTube";
+      lobbyElements.btnToggleQuickAlt.title = "Alternar para YouTube";
+    } else {
+      lobbyElements.btnToggleQuickAlt.innerHTML = "🍿 Pobreeflix";
+      lobbyElements.btnToggleQuickAlt.title = "Alternar para Pobreeflix (alternativa ao YouTube)";
+    }
+  }
+}
+
+if (lobbyElements.createStartUrl) {
+  lobbyElements.createStartUrl.addEventListener("input", () => {
+    syncUrlPresets(lobbyElements.createStartUrl.value);
+  });
+}
+
+if (lobbyElements.btnToggleQuickAlt) {
+  lobbyElements.btnToggleQuickAlt.addEventListener("click", () => {
+    const current = (lobbyElements.createStartUrl.value || "").trim().toLowerCase();
+    if (current.includes("pobreeflix")) {
+      lobbyElements.createStartUrl.value = PRESET_URLS.YOUTUBE;
+    } else {
+      lobbyElements.createStartUrl.value = PRESET_URLS.POBREEFLIX;
+    }
+    syncUrlPresets(lobbyElements.createStartUrl.value);
+    showToast(`URL definida: ${lobbyElements.createStartUrl.value}`, "info");
+  });
+}
+
+if (lobbyElements.chipUrlYoutube) {
+  lobbyElements.chipUrlYoutube.addEventListener("click", () => {
+    lobbyElements.createStartUrl.value = PRESET_URLS.YOUTUBE;
+    syncUrlPresets(PRESET_URLS.YOUTUBE);
+  });
+}
+
+if (lobbyElements.chipUrlPobreeflix) {
+  lobbyElements.chipUrlPobreeflix.addEventListener("click", () => {
+    lobbyElements.createStartUrl.value = PRESET_URLS.POBREEFLIX;
+    syncUrlPresets(PRESET_URLS.POBREEFLIX);
+  });
+}
+
 // Auto-extração caso o usuário cole o link completo no input de código
 lobbyElements.joinRoomCode.addEventListener("input", (e) => {
   const val = e.target.value;
@@ -1617,39 +1687,59 @@ if (roomElements.btnDeleteRoom) {
   });
 }
 
-// NAVEGAR / REPRODUZIR STREAM HLS (.m3u8) DENTRO DA SALA
+// NAVEGAR / REPRODUZIR STREAM HLS (.m3u8) OU SITE DENTRO DA SALA
+async function navigateHyperbeamToUrl(rawUrl) {
+  let url = (rawUrl || "").trim();
+  if (!url) return;
+
+  if (!state.isControlling) {
+    if (roomElements.inputNavUrl) roomElements.inputNavUrl.value = url;
+    showToast("Apenas quem está no controle pode trocar o site. Clique em '🎮 Controle' primeiro.", "error");
+    return;
+  }
+
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    url = "https://" + url;
+  }
+
+  // Se for .m3u8, redireciona pelo player HTML5 interno com hls.js
+  if (url.toLowerCase().includes(".m3u8")) {
+    url = `${window.location.origin}/player.html?src=${encodeURIComponent(url)}`;
+  }
+
+  try {
+    if (state.hbInstance && state.hbInstance.tabs) {
+      const tabs = await state.hbInstance.tabs.query({});
+      if (tabs && tabs.length > 0) {
+        await state.hbInstance.tabs.update(tabs[0].id, { url });
+        showToast("Carregando no navegador virtual...", "success");
+        if (roomElements.inputNavUrl) roomElements.inputNavUrl.value = "";
+      }
+    }
+  } catch (err) {
+    showToast("Erro ao carregar link: " + err.message, "error");
+  }
+}
+
 if (roomElements.formNav) {
   roomElements.formNav.addEventListener("submit", async (e) => {
     e.preventDefault();
-    let url = roomElements.inputNavUrl.value.trim();
-    if (!url) return;
-
-    if (!state.isControlling) {
-      showToast("Apenas quem está no controle do mouse pode trocar o vídeo/site.", "error");
-      return;
+    const url = roomElements.inputNavUrl.value.trim();
+    if (url) {
+      await navigateHyperbeamToUrl(url);
     }
+  });
+}
 
-    if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      url = "https://" + url;
-    }
+if (roomElements.btnRoomNavYoutube) {
+  roomElements.btnRoomNavYoutube.addEventListener("click", async () => {
+    await navigateHyperbeamToUrl(PRESET_URLS.YOUTUBE);
+  });
+}
 
-    // Se for .m3u8, redireciona pelo player HTML5 interno com hls.js
-    if (url.toLowerCase().includes(".m3u8")) {
-      url = `${window.location.origin}/player.html?src=${encodeURIComponent(url)}`;
-    }
-
-    try {
-      if (state.hbInstance && state.hbInstance.tabs) {
-        const tabs = await state.hbInstance.tabs.query({});
-        if (tabs && tabs.length > 0) {
-          await state.hbInstance.tabs.update(tabs[0].id, { url });
-          showToast("Carregando transmissão...", "success");
-          roomElements.inputNavUrl.value = "";
-        }
-      }
-    } catch (err) {
-      showToast("Erro ao carregar link: " + err.message, "error");
-    }
+if (roomElements.btnRoomNavPobreeflix) {
+  roomElements.btnRoomNavPobreeflix.addEventListener("click", async () => {
+    await navigateHyperbeamToUrl(PRESET_URLS.POBREEFLIX);
   });
 }
 

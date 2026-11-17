@@ -108,8 +108,26 @@
           
           <form id="form-create-room" class="card-form">
             <div class="field-group">
-              <label for="create-start-url">URL Inicial (Site, YouTube ou .m3u8)</label>
-              <input type="text" id="create-start-url" value="https://www.youtube.com" placeholder="Cole link do YouTube, site ou .m3u8..." />
+              <div class="field-label-row">
+                <label for="create-start-url">URL Inicial (Site ou Streaming)</label>
+                <span class="field-hint">YouTube ou Pobreeflix</span>
+              </div>
+              <div class="url-input-container">
+                <input type="text" id="create-start-url" value="https://www.youtube.com" placeholder="Cole link do YouTube, Pobreeflix ou .m3u8..." />
+                <button type="button" class="btn-url-quick-alt" id="btn-toggle-quick-alt" title="Alternar para Pobreeflix (alternativa ao YouTube)">
+                  🍿 Pobreeflix
+                </button>
+              </div>
+              <div class="url-choice-chips">
+                <button type="button" class="choice-chip active" id="chip-url-youtube" data-url="https://www.youtube.com" title="Usar YouTube como início">
+                  <span class="chip-icon">▶️</span>
+                  <span class="chip-text">YouTube</span>
+                </button>
+                <button type="button" class="choice-chip" id="chip-url-pobreeflix" data-url="https://pobreeflix.com/" title="Usar Pobreeflix como alternativa ao YouTube">
+                  <span class="chip-icon">🍿</span>
+                  <span class="chip-text">Pobreeflix</span>
+                </button>
+              </div>
             </div>
 
             <!-- AVISO DE LIMITE DE 1 SALA POR CONTA -->
@@ -261,6 +279,14 @@
         <form id="form-room-nav" class="room-nav-center">
           <input type="text" id="input-room-nav-url" placeholder="Navegar para site ou stream .m3u8..." autocomplete="off" />
           <button type="submit" class="btn-nav-go">Ir</button>
+          <div class="room-nav-quick-group">
+            <button type="button" class="btn-room-nav-quick" id="btn-room-nav-youtube" data-url="https://www.youtube.com" title="Navegar para o YouTube">
+              ▶️ YouTube
+            </button>
+            <button type="button" class="btn-room-nav-quick" id="btn-room-nav-pobreeflix" data-url="https://pobreeflix.com/" title="Navegar para Pobreeflix (Filmes e Séries)">
+              🍿 Pobreeflix
+            </button>
+          </div>
         </form>
       </header>
 

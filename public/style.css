@@ -317,6 +317,95 @@ body {
   color: var(--text-muted);
 }
 
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.url-input-container {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+}
+
+.url-input-container input {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-url-quick-alt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.btn-url-quick-alt:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
+}
+
+.btn-url-quick-alt:active {
+  transform: scale(0.98);
+}
+
+.url-choice-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.choice-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-family: var(--font-main);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 5px 11px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.choice-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.choice-chip.active {
+  background: var(--accent-subtle);
+  border-color: rgba(133, 194, 146, 0.45);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.choice-chip .chip-icon {
+  font-size: 0.82rem;
+}
+
 /* ====================================================
    BOTÕES GLOBAIS
    ==================================================== */
@@ -1805,6 +1894,38 @@ body {
   background: var(--accent-hover);
 }
 
+.room-nav-quick-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.btn-room-nav-quick {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-family: var(--font-main);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+  user-select: none;
+}
+
+.btn-room-nav-quick:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
+}
+
+.btn-room-nav-quick:active {
+  transform: scale(0.97);
+}
+
 .room-nav-right {
   display: flex;
   align-items: center;
@@ -2307,6 +2428,25 @@ body {
 
   .btn-nav-go {
     padding: 5px 8px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .room-nav-quick-group {
+    gap: 3px !important;
+  }
+
+  .btn-room-nav-quick {
+    padding: 5px 6px !important;
+    font-size: 0.68rem !important;
+  }
+
+  .btn-url-quick-alt {
+    padding: 0 10px !important;
+    font-size: 0.76rem !important;
+  }
+
+  .choice-chip {
+    padding: 4px 8px !important;
     font-size: 0.72rem !important;
   }
 
