@@ -230,6 +230,8 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     ublock: true, // Bloqueio nativo de anúncios, pop-ups invasivos e scripts maliciosos (uBlock Origin)
     webgl: true, // Aceleração gráfica para decodificação de vídeo fluida
     fps: 30, // 30 FPS estável para reprodução de vídeo sem sobrecarga de banda
+    width: 1280,
+    height: 720,
     locale: {
       language: "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
       country: "BR", // Localização e região do Brasil nativas no Chromium
@@ -276,23 +278,71 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
       pacDirectives.push("DIRECT");
       const proxyRoute = pacDirectives.join("; ");
 
-      // Roteamento inteligente de alta velocidade (Smart PAC):
-      // Testes de velocidade (fast.com, speedtest) e CDNs de streaming de vídeo (YouTube, Netflix, HLS/MP4)
-      // vão DIRETO na velocidade de datacenter (500 Mbps - 1 Gbps), evitando o gargalo de 300kb dos proxies gratuitos.
-      // O site inicial, buscas do Google e verificações de região continuam passando pelo IP brasileiro!
+      // Roteamento inteligente de alta velocidade (Smart PAC Nível Avançado):
+      // - Testes de velocidade (Fast.com, Speedtest) e CDNs de streaming de vídeo (YouTube, Netflix, HLS, DASH, MP4)
+      //   vão 100% DIRETO na velocidade de datacenter (500 Mbps - 1 Gbps), contornando o gargalo de banda dos proxies.
+      // - Hosts de vídeo piratas/players (Pobreeflix, mgeb.space, filemoon, etc.) também vão direto sem intermediários.
+      // - Páginas iniciais de navegação, buscas do Google e verificações de região passam pelo IP do Brasil com failover.
       const smartPacScript = `function FindProxyForURL(url, host) {
   var h = ("" + host).toLowerCase();
   var u = ("" + url).toLowerCase();
+
+  // 1. Rede interna, localhost e WebRTC sempre DIRETO
+  if (isPlainHostName(host) || h === "localhost" || h.indexOf(".local") !== -1 || h.indexOf("hyperbeam.com") !== -1) {
+    return "DIRECT";
+  }
+
+  // 2. Testes de velocidade em banda gigabit
   if (
     h === "fast.com" || h.indexOf("fast.com") !== -1 ||
-    h.indexOf("nflxvideo.net") !== -1 || h.indexOf("netflix.com") !== -1 ||
-    h.indexOf("speedtest.net") !== -1 || h.indexOf("googlevideo.com") !== -1 ||
-    h.indexOf("mgeb.space") !== -1 || h.indexOf("cloudfront.net") !== -1 ||
-    h.indexOf("akamaihd.net") !== -1 ||
-    u.indexOf(".mp4") !== -1 || u.indexOf(".m3u8") !== -1 || u.indexOf(".ts") !== -1
+    h.indexOf("nflxvideo.net") !== -1 || h.indexOf("nflximg.net") !== -1 ||
+    h.indexOf("speedtest.net") !== -1 || h.indexOf("speed.cloudflare.com") !== -1 ||
+    h.indexOf("testmy.net") !== -1
   ) {
     return "DIRECT";
   }
+
+  // 3. CDNs globais de streaming (YouTube, Netflix, Twitch, Cloudflare, Akamai, Fastly, CloudFront, BunnyCDN)
+  if (
+    h.indexOf("googlevideo.com") !== -1 || h.indexOf("ytimg.com") !== -1 ||
+    h.indexOf("netflix.com") !== -1 || h.indexOf("ttvnw.net") !== -1 ||
+    h.indexOf("jtvnw.net") !== -1 || h.indexOf("vimeocdn.com") !== -1 ||
+    h.indexOf("dmcdn.net") !== -1 || h.indexOf("cloudflarestream.com") !== -1 ||
+    h.indexOf("videodelivery.net") !== -1 || h.indexOf("b-cdn.net") !== -1 ||
+    h.indexOf("akamaihd.net") !== -1 || h.indexOf("akamaized.net") !== -1 ||
+    h.indexOf("cloudfront.net") !== -1 || h.indexOf("fastly.net") !== -1
+  ) {
+    return "DIRECT";
+  }
+
+  // 4. Hosts e servidores de players de filmes e séries (Pobreeflix, embeds externos)
+  if (
+    h.indexOf("mgeb.space") !== -1 || h.indexOf("filemoon") !== -1 ||
+    h.indexOf("streamwish") !== -1 || h.indexOf("streamtape") !== -1 ||
+    h.indexOf("doodstream") !== -1 || h.indexOf("dood.") !== -1 ||
+    h.indexOf("mixdrop") !== -1 || h.indexOf("vidhide") !== -1 ||
+    h.indexOf("upstream") !== -1 || h.indexOf("streamvid") !== -1 ||
+    h.indexOf("wolfstream") !== -1 || h.indexOf("luluvdo") !== -1 ||
+    h.indexOf("embedflix") !== -1 || h.indexOf("warezcdn") !== -1 ||
+    h.indexOf("superflix") !== -1 || h.indexOf("topflix") !== -1
+  ) {
+    return "DIRECT";
+  }
+
+  // 5. Todos os formatos de arquivo de vídeo/áudio e fragmentos de streaming (HLS, DASH, MP4)
+  if (
+    u.indexOf(".m3u8") !== -1 || u.indexOf(".ts") !== -1 ||
+    u.indexOf(".m4s") !== -1 || u.indexOf(".mp4") !== -1 ||
+    u.indexOf(".webm") !== -1 || u.indexOf(".mpd") !== -1 ||
+    u.indexOf(".m4v") !== -1 || u.indexOf(".mkv") !== -1 ||
+    u.indexOf("/videoplayback") !== -1 || u.indexOf("/hls/") !== -1 ||
+    u.indexOf("/dash/") !== -1 || u.indexOf("/chunks/") !== -1 ||
+    u.indexOf("/segments/") !== -1
+  ) {
+    return "DIRECT";
+  }
+
+  // 6. Rota com IP do Brasil para páginas normais, buscas e validações de região
   return "${proxyRoute}";
 }`;
 
