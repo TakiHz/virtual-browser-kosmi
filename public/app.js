@@ -1700,8 +1700,13 @@ async function navigateHyperbeamToUrl(rawUrl) {
     return;
   }
 
+  // Se o usuário digitou uma pesquisa (sem domínio ou com espaços), busca diretamente no Google Brasil (apenas sites do Brasil)
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
-    url = "https://" + url;
+    if (!url.includes(".") || url.includes(" ")) {
+      url = `https://www.google.com.br/search?q=${encodeURIComponent(url)}&cr=countryBR&lr=lang_pt&gl=BR&hl=pt-BR`;
+    } else {
+      url = "https://" + url;
+    }
   }
 
   // Se for YouTube sem parâmetros regionais, injeta região Brasil (gl=BR) e idioma português (hl=pt)

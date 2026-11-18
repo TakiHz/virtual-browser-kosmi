@@ -238,7 +238,7 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     },
   };
 
-  // Suporte opcional a Proxy Brasileiro configurável via variáveis de ambiente
+  // Suporte a Proxy Brasileiro (Webshare, Squid VPS ou Proxy Dedicado)
   if (process.env.HYPERBEAM_PROXY_PAC) {
     vmPayload.http_proxy = {
       pac: process.env.HYPERBEAM_PROXY_PAC,
@@ -246,10 +246,26 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
       ...(process.env.HYPERBEAM_PROXY_PASS ? { password: process.env.HYPERBEAM_PROXY_PASS } : {}),
     };
   } else if (process.env.BRAZIL_PROXY) {
-    const proxyHost = process.env.BRAZIL_PROXY.replace(/^https?:\/\//, "");
-    vmPayload.http_proxy = {
-      pac: `function FindProxyForURL(url, host) { return "PROXY ${proxyHost}"; }`,
-    };
+    try {
+      const raw = process.env.BRAZIL_PROXY.trim();
+      const parsed = new URL(raw.startsWith("http") ? raw : `http://${raw}`);
+      const hostPort = `${parsed.hostname}:${parsed.port || (parsed.protocol === "https:" ? 443 : 80)}`;
+      const username = parsed.username ? decodeURIComponent(parsed.username) : process.env.BRAZIL_PROXY_USER;
+      const password = parsed.password ? decodeURIComponent(parsed.password) : process.env.BRAZIL_PROXY_PASS;
+
+      vmPayload.http_proxy = {
+        pac: `function FindProxyForURL(url, host) { return "PROXY ${hostPort}"; }`,
+        ...(username ? { username } : {}),
+        ...(password ? { password } : {}),
+      };
+      console.log(`[Proxy Brasil]: Configurado para rota HTTP/HTTPS via ${hostPort}`);
+    } catch (proxyParseErr) {
+      const clean = process.env.BRAZIL_PROXY.replace(/^https?:\/\//, "").trim();
+      vmPayload.http_proxy = {
+        pac: `function FindProxyForURL(url, host) { return "PROXY ${clean}"; }`,
+      };
+      console.log(`[Proxy Brasil Fallback]: Configurado via ${clean}`);
+    }
   }
 
   for (let attempt = 1; attempt <= retries; attempt++) {
