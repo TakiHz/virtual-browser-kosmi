@@ -1790,6 +1790,7 @@ if (roomElements.btnTogglePopupBlock) {
 // ====================================================
 
 let shouldLockLandscape = false;
+let isEmulatedFullscreen = false;
 
 function getActiveFullscreenElement() {
   return (
@@ -1799,6 +1800,47 @@ function getActiveFullscreenElement() {
     document.msFullscreenElement ||
     null
   );
+}
+
+function isCurrentlyFullscreen() {
+  return !!getActiveFullscreenElement() || isEmulatedFullscreen;
+}
+
+function updateFullscreenUIState(isFs) {
+  const btnExit = document.getElementById("btn-fullscreen-exit");
+  if (btnExit) {
+    if (isFs) {
+      btnExit.classList.remove("hidden");
+    } else {
+      btnExit.classList.add("hidden");
+    }
+  }
+
+  if (roomElements.btnFullscreen) {
+    roomElements.btnFullscreen.title = isFs ? "Sair da Tela Cheia" : "Tela Cheia";
+    roomElements.btnFullscreen.innerHTML = isFs ? "🗗" : "⛶";
+  }
+}
+
+function enterEmulatedFullscreen(wrapper) {
+  isEmulatedFullscreen = true;
+  document.body.classList.add("fullscreen-active");
+  if (wrapper) {
+    wrapper.classList.add("fullscreen-emulated");
+  }
+  updateFullscreenUIState(true);
+}
+
+function exitEmulatedFullscreen() {
+  isEmulatedFullscreen = false;
+  document.body.classList.remove("fullscreen-active");
+  const wrapper =
+    document.getElementById("browser-wrapper") ||
+    document.querySelector(".browser-wrapper");
+  if (wrapper) {
+    wrapper.classList.remove("fullscreen-emulated");
+  }
+  updateFullscreenUIState(false);
 }
 
 // Trava a tela em horizontal ("landscape")
@@ -1847,31 +1889,55 @@ async function enterFullscreenWithLandscape() {
     document.documentElement;
 
   shouldLockLandscape = true;
+  let nativeSuccess = false;
 
+  // 1. Tenta API Nativa do navegador (Desktop, Android Chrome, iPadOS)
   try {
     if (wrapper.requestFullscreen) {
       await wrapper.requestFullscreen();
+      nativeSuccess = true;
     } else if (wrapper.webkitRequestFullscreen) {
       await wrapper.webkitRequestFullscreen();
+      nativeSuccess = true;
     } else if (wrapper.mozRequestFullScreen) {
       await wrapper.mozRequestFullScreen();
+      nativeSuccess = true;
     } else if (wrapper.msRequestFullscreen) {
       await wrapper.msRequestFullscreen();
+      nativeSuccess = true;
     }
   } catch (err) {
-    console.warn("Falha no requestFullscreen:", err.message);
-    showToast("Erro ao abrir tela cheia: " + err.message, "error");
-    shouldLockLandscape = false;
-    return;
+    console.warn("requestFullscreen nativo falhou ou não suportado:", err.message);
+    nativeSuccess = false;
   }
 
-  // Aciona o travamento horizontal
+  // 2. Se a API nativa não for suportada (ex: iPhone / iOS Safari) ou falhou:
+  // Ativa automaticamente o modo Fullscreen Emulado (CSS Pseudo-Fullscreen para iPhone/iOS)
+  if (!nativeSuccess) {
+    enterEmulatedFullscreen(wrapper);
+  }
+
+  // 3. Aciona o travamento horizontal se suportado
   await lockLandscapeOrientationSafely();
+
+  // 4. Se for dispositivo móvel em pé, avisa que pode virar para horizontal
+  if (
+    window.innerWidth < window.innerHeight &&
+    (window.innerWidth <= 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
+  ) {
+    showToast("Dica: Gire o aparelho na horizontal para tela cheia completa!", "info");
+  }
 }
 
 async function exitFullscreenAndUnlock() {
   shouldLockLandscape = false;
 
+  // 1. Sai do modo emulado se estiver ativo
+  if (isEmulatedFullscreen) {
+    exitEmulatedFullscreen();
+  }
+
+  // 2. Sai do fullscreen nativo se estiver ativo
   try {
     if (getActiveFullscreenElement()) {
       if (document.exitFullscreen) {
@@ -1888,32 +1954,21 @@ async function exitFullscreenAndUnlock() {
     console.warn("Erro ao sair de tela cheia:", err.message);
   }
 
+  updateFullscreenUIState(false);
   unlockOrientationSafely();
 }
 
 function handleFullscreenChange() {
-  const isFs = !!getActiveFullscreenElement();
-  const btnExit = document.getElementById("btn-fullscreen-exit");
-  if (btnExit) {
-    if (isFs) {
-      btnExit.classList.remove("hidden");
-    } else {
-      btnExit.classList.add("hidden");
-    }
-  }
-
-  if (roomElements.btnFullscreen) {
-    roomElements.btnFullscreen.title = isFs ? "Sair da Tela Cheia" : "Tela Cheia";
-    roomElements.btnFullscreen.innerHTML = isFs ? "🗗" : "⛶";
-  }
-
-  if (isFs) {
+  const isNativeFs = !!getActiveFullscreenElement();
+  if (!isNativeFs && !isEmulatedFullscreen) {
+    updateFullscreenUIState(false);
+    shouldLockLandscape = false;
+    unlockOrientationSafely();
+  } else if (isNativeFs) {
+    updateFullscreenUIState(true);
     if (shouldLockLandscape) {
       lockLandscapeOrientationSafely();
     }
-  } else {
-    shouldLockLandscape = false;
-    unlockOrientationSafely();
   }
 }
 
@@ -1924,7 +1979,7 @@ document.addEventListener("MSFullscreenChange", handleFullscreenChange);
 
 if (roomElements.btnFullscreen) {
   roomElements.btnFullscreen.addEventListener("click", () => {
-    if (!getActiveFullscreenElement()) {
+    if (!isCurrentlyFullscreen()) {
       enterFullscreenWithLandscape();
     } else {
       exitFullscreenAndUnlock();
@@ -1939,6 +1994,20 @@ if (btnFsExitFloating) {
     exitFullscreenAndUnlock();
   });
 }
+
+// Fechar tela cheia com tecla ESC
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && isCurrentlyFullscreen()) {
+    exitFullscreenAndUnlock();
+  }
+});
+
+// Suporte para giro de tela no iPhone
+window.addEventListener("orientationchange", () => {
+  if (isCurrentlyFullscreen()) {
+    window.scrollTo(0, 0);
+  }
+});
 
 // ====================================================
 // CHAT & SIDEBAR

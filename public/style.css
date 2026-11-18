@@ -1501,25 +1501,29 @@ body {
   position: absolute;
   top: 14px;
   right: 14px;
-  z-index: 99999;
-  background: rgba(18, 19, 22, 0.75);
+  top: max(14px, env(safe-area-inset-top, 14px));
+  right: max(14px, env(safe-area-inset-right, 14px));
+  z-index: 1000000;
+  background: rgba(18, 19, 22, 0.85);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: #e5f0e7;
-  border: 1px solid rgba(133, 194, 146, 0.3);
+  border: 1px solid rgba(133, 194, 146, 0.4);
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 8px 16px;
   font-family: var(--font-main);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
-  opacity: 0.75;
-  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  opacity: 0.9;
+  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
   pointer-events: auto;
   user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
 }
 
@@ -1528,24 +1532,34 @@ body {
   opacity: 1;
   background: rgba(46, 77, 53, 0.95);
   border-color: var(--accent);
+  transform: scale(1.02);
 }
 
 .btn-fullscreen-exit.hidden {
   display: none !important;
 }
 
-/* ESTILOS DE TELA CHEIA (FULLSCREEN & HORIZONTAL) */
+/* ESTILOS DE TELA CHEIA (NATIVO & EMULADO PARA IPHONE / SAFARI / IOS) */
 :fullscreen .browser-wrapper,
 :-webkit-full-screen .browser-wrapper,
 .browser-wrapper:fullscreen,
 .browser-wrapper:-webkit-full-screen,
 .browser-wrapper:-moz-full-screen,
-.browser-wrapper:-ms-fullscreen {
+.browser-wrapper:-ms-fullscreen,
+.browser-wrapper.fullscreen-emulated,
+body.fullscreen-active .browser-wrapper {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
   width: 100vw !important;
+  width: 100dvw !important;
   height: 100vh !important;
   height: 100dvh !important;
   max-width: 100vw !important;
   max-height: 100vh !important;
+  max-height: 100dvh !important;
   aspect-ratio: auto !important;
   flex: 1 1 100% !important;
   margin: 0 !important;
@@ -1555,16 +1569,22 @@ body {
   align-items: center !important;
   justify-content: center !important;
   overflow: hidden !important;
+  z-index: 999999 !important;
 }
 
+:fullscreen .browser-wrapper #browser-mount,
+:-webkit-full-screen .browser-wrapper #browser-mount,
 .browser-wrapper:fullscreen #browser-mount,
 .browser-wrapper:-webkit-full-screen #browser-mount,
 .browser-wrapper:-moz-full-screen #browser-mount,
-.browser-wrapper:-ms-fullscreen #browser-mount {
+.browser-wrapper:-ms-fullscreen #browser-mount,
+.browser-wrapper.fullscreen-emulated #browser-mount,
+body.fullscreen-active .browser-wrapper #browser-mount {
   width: 100% !important;
   height: 100% !important;
   max-width: 100vw !important;
   max-height: 100vh !important;
+  max-height: 100dvh !important;
   aspect-ratio: auto !important;
   display: flex !important;
   align-items: center !important;
@@ -1572,6 +1592,14 @@ body {
   background: #000 !important;
 }
 
+:fullscreen .browser-wrapper #browser-mount > *,
+:fullscreen .browser-wrapper #browser-mount video,
+:fullscreen .browser-wrapper #browser-mount iframe,
+:fullscreen .browser-wrapper #browser-mount canvas,
+:-webkit-full-screen .browser-wrapper #browser-mount > *,
+:-webkit-full-screen .browser-wrapper #browser-mount video,
+:-webkit-full-screen .browser-wrapper #browser-mount iframe,
+:-webkit-full-screen .browser-wrapper #browser-mount canvas,
 .browser-wrapper:fullscreen #browser-mount > *,
 .browser-wrapper:fullscreen #browser-mount video,
 .browser-wrapper:fullscreen #browser-mount iframe,
@@ -1579,13 +1607,30 @@ body {
 .browser-wrapper:-webkit-full-screen #browser-mount > *,
 .browser-wrapper:-webkit-full-screen #browser-mount video,
 .browser-wrapper:-webkit-full-screen #browser-mount iframe,
-.browser-wrapper:-webkit-full-screen #browser-mount canvas {
+.browser-wrapper:-webkit-full-screen #browser-mount canvas,
+.browser-wrapper.fullscreen-emulated #browser-mount > *,
+.browser-wrapper.fullscreen-emulated #browser-mount video,
+.browser-wrapper.fullscreen-emulated #browser-mount iframe,
+.browser-wrapper.fullscreen-emulated #browser-mount canvas,
+body.fullscreen-active .browser-wrapper #browser-mount > *,
+body.fullscreen-active .browser-wrapper #browser-mount video,
+body.fullscreen-active .browser-wrapper #browser-mount iframe,
+body.fullscreen-active .browser-wrapper #browser-mount canvas {
   width: 100% !important;
   height: 100% !important;
   max-width: 100vw !important;
   max-height: 100vh !important;
+  max-height: 100dvh !important;
   aspect-ratio: auto !important;
   object-fit: contain !important;
+}
+
+body.fullscreen-active {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none !important;
 }
 
 /* BARRA FLUTUANTE DE DIGITAÇÃO MOBILE / PROXY DE TECLADO */
@@ -2488,6 +2533,57 @@ body {
     height: 100% !important;
     aspect-ratio: 16 / 9 !important;
     object-fit: fill !important;
+  }
+
+  /* FULLSCREEN EMULADO NO MOBILE (IPHONE / IOS / ANDROID FALLBACK) */
+  body.fullscreen-active .browser-wrapper,
+  .browser-wrapper.fullscreen-emulated {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    width: 100dvw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    aspect-ratio: auto !important;
+    z-index: 999999 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    order: unset !important;
+    background: #000 !important;
+  }
+
+  body.fullscreen-active .browser-wrapper #browser-mount,
+  .browser-wrapper.fullscreen-emulated #browser-mount {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    aspect-ratio: auto !important;
+    background: #000 !important;
+  }
+
+  body.fullscreen-active .browser-wrapper #browser-mount > *,
+  body.fullscreen-active .browser-wrapper #browser-mount video,
+  body.fullscreen-active .browser-wrapper #browser-mount iframe,
+  body.fullscreen-active .browser-wrapper #browser-mount canvas,
+  .browser-wrapper.fullscreen-emulated #browser-mount > *,
+  .browser-wrapper.fullscreen-emulated #browser-mount video,
+  .browser-wrapper.fullscreen-emulated #browser-mount iframe,
+  .browser-wrapper.fullscreen-emulated #browser-mount canvas {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    aspect-ratio: auto !important;
+    object-fit: contain !important;
   }
 
   /* 3. Dock de Controles Logo Abaixo do Player */
