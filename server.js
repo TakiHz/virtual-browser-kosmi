@@ -228,6 +228,8 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     start_url: startUrl,
     kiosk: false,
     ublock: true, // Bloqueio nativo de anúncios, pop-ups invasivos e scripts maliciosos (uBlock Origin)
+    webgl: true, // Aceleração gráfica para decodificação de vídeo fluida
+    fps: 30, // 30 FPS estável para reprodução de vídeo sem sobrecarga de banda
     locale: {
       language: "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
       country: "BR", // Localização e região do Brasil nativas no Chromium

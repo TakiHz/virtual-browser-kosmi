@@ -1147,6 +1147,7 @@ async function mountHyperbeam(embedUrl) {
     state.hbInstance = await Hyperbeam(roomElements.browserMount, embedUrl, {
       disableInput: true, // Inicia como espectador até assumir controle
       delegateKeyboard: true,
+      playoutDelay: true, // Suaviza o vídeo eliminando frame drops e travamentos de WebRTC
       volume: parseFloat(roomElements.volumeSlider.value),
       onDisconnect: () => {
         showToast("Navegador virtual desconectado.", "info");
