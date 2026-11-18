@@ -248,23 +248,39 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
   } else if (process.env.BRAZIL_PROXY) {
     try {
       const raw = process.env.BRAZIL_PROXY.trim();
-      const parsed = new URL(raw.startsWith("http") ? raw : `http://${raw}`);
-      const hostPort = `${parsed.hostname}:${parsed.port || (parsed.protocol === "https:" ? 443 : 80)}`;
-      const username = parsed.username ? decodeURIComponent(parsed.username) : process.env.BRAZIL_PROXY_USER;
-      const password = parsed.password ? decodeURIComponent(parsed.password) : process.env.BRAZIL_PROXY_PASS;
+      const proxies = raw.split(",").map(p => p.trim()).filter(Boolean);
+      const pacDirectives = [];
+      let defaultUser = process.env.BRAZIL_PROXY_USER;
+      let defaultPass = process.env.BRAZIL_PROXY_PASS;
+
+      for (const p of proxies) {
+        try {
+          const parsed = new URL(p.startsWith("http") ? p : `http://${p}`);
+          const hostPort = `${parsed.hostname}:${parsed.port || (parsed.protocol === "https:" ? 443 : 80)}`;
+          pacDirectives.push(`PROXY ${hostPort}`);
+          if (parsed.username && !defaultUser) {
+            defaultUser = decodeURIComponent(parsed.username);
+          }
+          if (parsed.password && !defaultPass) {
+            defaultPass = decodeURIComponent(parsed.password);
+          }
+        } catch (_) {
+          const clean = p.replace(/^https?:\/\//, "").trim();
+          if (clean) pacDirectives.push(`PROXY ${clean}`);
+        }
+      }
+
+      // Adiciona DIRECT como failover seguro para garantir que a navegação nunca quebre se o proxy oscilar
+      pacDirectives.push("DIRECT");
 
       vmPayload.http_proxy = {
-        pac: `function FindProxyForURL(url, host) { return "PROXY ${hostPort}"; }`,
-        ...(username ? { username } : {}),
-        ...(password ? { password } : {}),
+        pac: `function FindProxyForURL(url, host) { return "${pacDirectives.join("; ")}"; }`,
+        ...(defaultUser ? { username: defaultUser } : {}),
+        ...(defaultPass ? { password: defaultPass } : {}),
       };
-      console.log(`[Proxy Brasil]: Configurado para rota HTTP/HTTPS via ${hostPort}`);
+      console.log(`[Proxy Brasil]: Configurado com rota resiliente: ${pacDirectives.join(" -> ")}`);
     } catch (proxyParseErr) {
-      const clean = process.env.BRAZIL_PROXY.replace(/^https?:\/\//, "").trim();
-      vmPayload.http_proxy = {
-        pac: `function FindProxyForURL(url, host) { return "PROXY ${clean}"; }`,
-      };
-      console.log(`[Proxy Brasil Fallback]: Configurado via ${clean}`);
+      console.warn(`[Proxy Brasil]: Falha ao processar BRAZIL_PROXY: ${proxyParseErr.message}`);
     }
   }
 
