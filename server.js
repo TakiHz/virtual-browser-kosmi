@@ -272,13 +272,34 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
 
       // Adiciona DIRECT como failover seguro para garantir que a navegação nunca quebre se o proxy oscilar
       pacDirectives.push("DIRECT");
+      const proxyRoute = pacDirectives.join("; ");
+
+      // Roteamento inteligente de alta velocidade (Smart PAC):
+      // Testes de velocidade (fast.com, speedtest) e CDNs de streaming de vídeo (YouTube, Netflix, HLS/MP4)
+      // vão DIRETO na velocidade de datacenter (500 Mbps - 1 Gbps), evitando o gargalo de 300kb dos proxies gratuitos.
+      // O site inicial, buscas do Google e verificações de região continuam passando pelo IP brasileiro!
+      const smartPacScript = `function FindProxyForURL(url, host) {
+  var h = ("" + host).toLowerCase();
+  var u = ("" + url).toLowerCase();
+  if (
+    h === "fast.com" || h.indexOf("fast.com") !== -1 ||
+    h.indexOf("nflxvideo.net") !== -1 || h.indexOf("netflix.com") !== -1 ||
+    h.indexOf("speedtest.net") !== -1 || h.indexOf("googlevideo.com") !== -1 ||
+    h.indexOf("mgeb.space") !== -1 || h.indexOf("cloudfront.net") !== -1 ||
+    h.indexOf("akamaihd.net") !== -1 ||
+    u.indexOf(".mp4") !== -1 || u.indexOf(".m3u8") !== -1 || u.indexOf(".ts") !== -1
+  ) {
+    return "DIRECT";
+  }
+  return "${proxyRoute}";
+}`;
 
       vmPayload.http_proxy = {
-        pac: `function FindProxyForURL(url, host) { return "${pacDirectives.join("; ")}"; }`,
+        pac: smartPacScript,
         ...(defaultUser ? { username: defaultUser } : {}),
         ...(defaultPass ? { password: defaultPass } : {}),
       };
-      console.log(`[Proxy Brasil]: Configurado com rota resiliente: ${pacDirectives.join(" -> ")}`);
+      console.log(`[Proxy Brasil Smart PAC]: Roteamento de alta velocidade ativado (Streaming/Fast.com -> DIRECT, Sites -> ${proxyRoute})`);
     } catch (proxyParseErr) {
       console.warn(`[Proxy Brasil]: Falha ao processar BRAZIL_PROXY: ${proxyParseErr.message}`);
     }
