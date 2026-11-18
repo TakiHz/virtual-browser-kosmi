@@ -213,6 +213,45 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     );
   }
 
+  // Se o link for do YouTube sem parâmetros de idioma, adiciona região Brasil (gl=BR) e português (hl=pt)
+  if (startUrl.includes("youtube.com") && !startUrl.includes("gl=") && !startUrl.includes("hl=")) {
+    const sep = startUrl.includes("?") ? "&" : "?";
+    startUrl = `${startUrl}${sep}gl=BR&hl=pt`;
+  }
+
+  // Se for Google e não tiver especificado país ou idioma, direciona para o Google Brasil em português
+  if (startUrl === "https://www.google.com" || startUrl === "http://www.google.com") {
+    startUrl = "https://www.google.com.br?hl=pt-BR";
+  }
+
+  const vmPayload = {
+    start_url: startUrl,
+    kiosk: false,
+    ublock: true, // Bloqueio nativo de anúncios, pop-ups invasivos e scripts maliciosos (uBlock Origin)
+    locale: {
+      language: "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+      country: "BR", // Localização e região do Brasil nativas no Chromium
+    },
+    timeout: {
+      offline: 300, // Desliga 5 minutos após o último sair para economizar recursos
+      warning: 60,
+    },
+  };
+
+  // Suporte opcional a Proxy Brasileiro configurável via variáveis de ambiente
+  if (process.env.HYPERBEAM_PROXY_PAC) {
+    vmPayload.http_proxy = {
+      pac: process.env.HYPERBEAM_PROXY_PAC,
+      ...(process.env.HYPERBEAM_PROXY_USER ? { username: process.env.HYPERBEAM_PROXY_USER } : {}),
+      ...(process.env.HYPERBEAM_PROXY_PASS ? { password: process.env.HYPERBEAM_PROXY_PASS } : {}),
+    };
+  } else if (process.env.BRAZIL_PROXY) {
+    const proxyHost = process.env.BRAZIL_PROXY.replace(/^https?:\/\//, "");
+    vmPayload.http_proxy = {
+      pac: `function FindProxyForURL(url, host) { return "PROXY ${proxyHost}"; }`,
+    };
+  }
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     const response = await fetch("https://engine.hyperbeam.com/v0/vm", {
       method: "POST",
@@ -220,15 +259,7 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
         Authorization: `Bearer ${HYPERBEAM_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        start_url: startUrl,
-        kiosk: false,
-        ublock: true, // Bloqueio nativo de anúncios, pop-ups invasivos e scripts maliciosos (uBlock Origin)
-        timeout: {
-          offline: 300, // Desliga 5 minutos após o último sair para economizar recursos
-          warning: 60,
-        },
-      }),
+      body: JSON.stringify(vmPayload),
     });
 
     if (response.ok) {

@@ -908,7 +908,7 @@ lobbyElements.btnLogout.addEventListener("click", async () => {
 // ====================================================
 const PRESET_URLS = {
   POBREEFLIX: "https://pobreeflix.com/",
-  YOUTUBE: "https://www.youtube.com",
+  YOUTUBE: "https://www.youtube.com?gl=BR&hl=pt",
 };
 
 // ====================================================
@@ -1702,6 +1702,17 @@ async function navigateHyperbeamToUrl(rawUrl) {
 
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
     url = "https://" + url;
+  }
+
+  // Se for YouTube sem parâmetros regionais, injeta região Brasil (gl=BR) e idioma português (hl=pt)
+  if (url.includes("youtube.com") && !url.includes("gl=") && !url.includes("hl=")) {
+    const sep = url.includes("?") ? "&" : "?";
+    url = `${url}${sep}gl=BR&hl=pt`;
+  }
+
+  // Se for Google sem país/idioma, direciona para o Google Brasil em português
+  if (url === "https://www.google.com" || url === "http://www.google.com") {
+    url = "https://www.google.com.br?hl=pt-BR";
   }
 
   // Se for .m3u8, redireciona pelo player HTML5 interno com hls.js
