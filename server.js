@@ -240,7 +240,13 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     (proxyConfig && (proxyConfig.includes("190.9.48.193") || proxyConfig.toLowerCase().includes("mexico")))
   );
 
-  const defaultCountry = isMexico ? "MX" : (process.env.COUNTRY || "US");
+  const isBrazil = !!(
+    process.env.REGION === "BR" ||
+    process.env.BRAZIL_PROXY ||
+    (proxyConfig && (proxyConfig.includes("201.28.86.18") || proxyConfig.toLowerCase().includes("brazil")))
+  );
+
+  const defaultCountry = isMexico ? "MX" : (isBrazil ? "BR" : (process.env.COUNTRY || "BR"));
   const defaultLanguage = isMexico
     ? "es-MX,es;q=0.9,pt-BR;q=0.8,pt;q=0.7,en-US;q=0.6,en;q=0.5"
     : "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7";
@@ -255,7 +261,7 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     height: 720,
     locale: {
       language: defaultLanguage,
-      country: defaultCountry, // Estados Unidos (US) ou México (MX)
+      country: defaultCountry, // Brasil (BR), México (MX) ou Estados Unidos (US)
     },
     timeout: {
       offline: 300, // Desliga 5 minutos após o último sair para economizar recursos
