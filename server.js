@@ -224,15 +224,21 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     startUrl = "https://www.google.com.br?hl=pt-BR";
   }
 
-  // Suporte a Proxy (México, Brasil, Webshare, VPS ou Proxy Dedicado)
-  const proxyConfig = (process.env.MEXICO_PROXY || process.env.PROXY_URL || process.env.BRAZIL_PROXY || "").trim();
-  const isMexico = !!(
+  // Suporte a Proxy de Baixa Latência (US-East Comcast/Ohio, México, Brasil ou Dedicado)
+  const proxyConfig = (
+    process.env.PROXY_URL ||
+    process.env.US_PROXY ||
     process.env.MEXICO_PROXY ||
+    process.env.BRAZIL_PROXY ||
+    "50.238.106.26:3128, 18.222.225.236:3128"
+  ).trim();
+
+  const isMexico = !!(
     process.env.REGION === "MX" ||
     (proxyConfig && (proxyConfig.includes("190.9.48.193") || proxyConfig.toLowerCase().includes("mexico")))
   );
 
-  const defaultCountry = isMexico ? "MX" : "BR";
+  const defaultCountry = isMexico ? "MX" : (process.env.COUNTRY || "US");
   const defaultLanguage = isMexico
     ? "es-MX,es;q=0.9,pt-BR;q=0.8,pt;q=0.7,en-US;q=0.6,en;q=0.5"
     : "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7";
