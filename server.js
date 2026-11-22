@@ -206,7 +206,7 @@ function generateRoomCode() {
   return code;
 }
 
-async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries = 2) {
+async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries = 2, requestedRegion = null) {
   if (!HYPERBEAM_API_KEY) {
     throw new Error(
       "A chave HYPERBEAM_API_KEY não foi configurada no servidor. Obtenha uma chave em https://hyperbeam.com e adicione nas variáveis de ambiente."
@@ -224,9 +224,12 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     startUrl = "https://www.google.com.br?hl=pt-BR";
   }
 
-  // Configuração de Região e Proxy:
-  // Modo Padrão / Recomendado: IP Oficial dos Estados Unidos Nativo do Hyperbeam (AWS / UpCloud)
+  // Configuração de Região e Cluster Hyperbeam:
+  // Modo Padrão: Conexão Direta nos Servidores Nativos do Hyperbeam (AWS / UpCloud)
   // - 100% Grátis, SEM LIMITE de internet (unmetered gigabit 1 Gbps - 10 Gbps), latência ultra-baixa (5-15ms)
+  // - Cluster "NA" (North America) para menor ping para a América do Sul ou "EU" (Europa) para menor tráfego
+  const hyperbeamRegion = requestedRegion || process.env.HYPERBEAM_REGION || "NA";
+
   const proxyConfig = (
     process.env.PROXY_URL ||
     process.env.US_PROXY ||
@@ -246,13 +249,14 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     (proxyConfig && (proxyConfig.includes("201.28.86.18") || proxyConfig.toLowerCase().includes("brazil")))
   );
 
-  const defaultCountry = isMexico ? "MX" : (isBrazil ? "BR" : (process.env.COUNTRY || "BR"));
+  const defaultCountry = isMexico ? "MX" : (isBrazil ? "BR" : (process.env.COUNTRY || "US"));
   const defaultLanguage = isMexico
     ? "es-MX,es;q=0.9,pt-BR;q=0.8,pt;q=0.7,en-US;q=0.6,en;q=0.5"
     : "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7";
 
   const vmPayload = {
     start_url: startUrl,
+    region: hyperbeamRegion, // Cluster oficial Hyperbeam ("NA" ou "EU")
     kiosk: false,
     ublock: true, // Bloqueio nativo de anúncios, pop-ups invasivos e scripts maliciosos (uBlock Origin)
     webgl: true, // Aceleração gráfica para decodificação de vídeo fluida
@@ -261,7 +265,7 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     height: 720,
     locale: {
       language: defaultLanguage,
-      country: defaultCountry, // Brasil (BR), México (MX) ou Estados Unidos (US)
+      country: defaultCountry, // Nativo oficial dos EUA com idioma pt-BR
     },
     timeout: {
       offline: 300, // Desliga 5 minutos após o último sair para economizar recursos
@@ -382,7 +386,7 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
 // Criar nova sala
 app.post("/api/rooms", authMiddleware, async (req, res) => {
   try {
-    let { startUrl } = req.body || {};
+    let { startUrl, region } = req.body || {};
     startUrl = startUrl?.trim() || "https://pobreeflix.com/";
 
     // REGRA: Limite estrito de apenas 1 sala ativa por conta
@@ -412,7 +416,7 @@ app.post("/api/rooms", authMiddleware, async (req, res) => {
       code = generateRoomCode();
     }
 
-    const vm = await requestHyperbeamVM(startUrl);
+    const vm = await requestHyperbeamVM(startUrl, 2, region);
 
     const room = await createRoomStore(code, {
       hostNickname: req.user.nickname,
