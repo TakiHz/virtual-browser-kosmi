@@ -224,6 +224,19 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     startUrl = "https://www.google.com.br?hl=pt-BR";
   }
 
+  // Suporte a Proxy (México, Brasil, Webshare, VPS ou Proxy Dedicado)
+  const proxyConfig = (process.env.MEXICO_PROXY || process.env.PROXY_URL || process.env.BRAZIL_PROXY || "").trim();
+  const isMexico = !!(
+    process.env.MEXICO_PROXY ||
+    process.env.REGION === "MX" ||
+    (proxyConfig && (proxyConfig.includes("190.9.48.193") || proxyConfig.toLowerCase().includes("mexico")))
+  );
+
+  const defaultCountry = isMexico ? "MX" : "BR";
+  const defaultLanguage = isMexico
+    ? "es-MX,es;q=0.9,pt-BR;q=0.8,pt;q=0.7,en-US;q=0.6,en;q=0.5"
+    : "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7";
+
   const vmPayload = {
     start_url: startUrl,
     kiosk: false,
@@ -233,8 +246,8 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     width: 1280,
     height: 720,
     locale: {
-      language: "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-      country: "BR", // Localização e região do Brasil nativas no Chromium
+      language: defaultLanguage,
+      country: defaultCountry, // México (MX) ou Brasil (BR)
     },
     timeout: {
       offline: 300, // Desliga 5 minutos após o último sair para economizar recursos
@@ -242,20 +255,19 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     },
   };
 
-  // Suporte a Proxy Brasileiro (Webshare, Squid VPS ou Proxy Dedicado)
   if (process.env.HYPERBEAM_PROXY_PAC) {
     vmPayload.http_proxy = {
       pac: process.env.HYPERBEAM_PROXY_PAC,
       ...(process.env.HYPERBEAM_PROXY_USER ? { username: process.env.HYPERBEAM_PROXY_USER } : {}),
       ...(process.env.HYPERBEAM_PROXY_PASS ? { password: process.env.HYPERBEAM_PROXY_PASS } : {}),
     };
-  } else if (process.env.BRAZIL_PROXY) {
+  } else if (proxyConfig) {
     try {
-      const raw = process.env.BRAZIL_PROXY.trim();
+      const raw = proxyConfig;
       const proxies = raw.split(",").map(p => p.trim()).filter(Boolean);
       const pacDirectives = [];
-      let defaultUser = process.env.BRAZIL_PROXY_USER;
-      let defaultPass = process.env.BRAZIL_PROXY_PASS;
+      let defaultUser = process.env.PROXY_USER || process.env.MEXICO_PROXY_USER || process.env.BRAZIL_PROXY_USER;
+      let defaultPass = process.env.PROXY_PASS || process.env.MEXICO_PROXY_PASS || process.env.BRAZIL_PROXY_PASS;
 
       for (const p of proxies) {
         try {
@@ -278,11 +290,10 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
       pacDirectives.push("DIRECT");
       const proxyRoute = pacDirectives.join("; ");
 
-      // Roteamento inteligente de alta velocidade (Smart PAC Nível Avançado):
-      // - Testes de velocidade (Fast.com, Speedtest) e CDNs de streaming de vídeo (YouTube, Netflix, HLS, DASH, MP4)
-      //   vão 100% DIRETO na velocidade de datacenter (500 Mbps - 1 Gbps), contornando o gargalo de banda dos proxies.
-      // - Hosts de vídeo piratas/players (Pobreeflix, mgeb.space, filemoon, etc.) também vão direto sem intermediários.
-      // - Páginas iniciais de navegação, buscas do Google e verificações de região passam pelo IP do Brasil com failover.
+      // Roteamento inteligente Smart PAC:
+      // - Fast.com, Speedtest e YouTube vão DIRECT para medir banda máxima e economizar recursos do proxy
+      // - Pobreeflix e os players de filmes/séries (mgeb.space, nhdapi, etc.) DEVEM passar pelo proxy regional (México/Brasil)
+      //   para que o player não bloqueie o IP dos datacenters dos EUA e funcione perfeitamente!
       const smartPacScript = `function FindProxyForURL(url, host) {
   var h = ("" + host).toLowerCase();
   var u = ("" + url).toLowerCase();
@@ -302,47 +313,12 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     return "DIRECT";
   }
 
-  // 3. CDNs globais de streaming (YouTube, Netflix, Twitch, Cloudflare, Akamai, Fastly, CloudFront, BunnyCDN)
-  if (
-    h.indexOf("googlevideo.com") !== -1 || h.indexOf("ytimg.com") !== -1 ||
-    h.indexOf("netflix.com") !== -1 || h.indexOf("ttvnw.net") !== -1 ||
-    h.indexOf("jtvnw.net") !== -1 || h.indexOf("vimeocdn.com") !== -1 ||
-    h.indexOf("dmcdn.net") !== -1 || h.indexOf("cloudflarestream.com") !== -1 ||
-    h.indexOf("videodelivery.net") !== -1 || h.indexOf("b-cdn.net") !== -1 ||
-    h.indexOf("akamaihd.net") !== -1 || h.indexOf("akamaized.net") !== -1 ||
-    h.indexOf("cloudfront.net") !== -1 || h.indexOf("fastly.net") !== -1
-  ) {
+  // 3. YouTube pode ir direto pela rede gigabit
+  if (h.indexOf("googlevideo.com") !== -1 || h.indexOf("ytimg.com") !== -1) {
     return "DIRECT";
   }
 
-  // 4. Hosts e servidores de players de filmes e séries (Pobreeflix, embeds externos)
-  if (
-    h.indexOf("mgeb.space") !== -1 || h.indexOf("filemoon") !== -1 ||
-    h.indexOf("streamwish") !== -1 || h.indexOf("streamtape") !== -1 ||
-    h.indexOf("doodstream") !== -1 || h.indexOf("dood.") !== -1 ||
-    h.indexOf("mixdrop") !== -1 || h.indexOf("vidhide") !== -1 ||
-    h.indexOf("upstream") !== -1 || h.indexOf("streamvid") !== -1 ||
-    h.indexOf("wolfstream") !== -1 || h.indexOf("luluvdo") !== -1 ||
-    h.indexOf("embedflix") !== -1 || h.indexOf("warezcdn") !== -1 ||
-    h.indexOf("superflix") !== -1 || h.indexOf("topflix") !== -1
-  ) {
-    return "DIRECT";
-  }
-
-  // 5. Todos os formatos de arquivo de vídeo/áudio e fragmentos de streaming (HLS, DASH, MP4)
-  if (
-    u.indexOf(".m3u8") !== -1 || u.indexOf(".ts") !== -1 ||
-    u.indexOf(".m4s") !== -1 || u.indexOf(".mp4") !== -1 ||
-    u.indexOf(".webm") !== -1 || u.indexOf(".mpd") !== -1 ||
-    u.indexOf(".m4v") !== -1 || u.indexOf(".mkv") !== -1 ||
-    u.indexOf("/videoplayback") !== -1 || u.indexOf("/hls/") !== -1 ||
-    u.indexOf("/dash/") !== -1 || u.indexOf("/chunks/") !== -1 ||
-    u.indexOf("/segments/") !== -1
-  ) {
-    return "DIRECT";
-  }
-
-  // 6. Rota com IP do Brasil para páginas normais, buscas e validações de região
+  // 4. Pobreeflix, players externos e vídeos de filmes passam pelo IP regional (${defaultCountry}) para liberar o player!
   return "${proxyRoute}";
 }`;
 
@@ -351,9 +327,9 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
         ...(defaultUser ? { username: defaultUser } : {}),
         ...(defaultPass ? { password: defaultPass } : {}),
       };
-      console.log(`[Proxy Brasil Smart PAC]: Roteamento de alta velocidade ativado (Streaming/Fast.com -> DIRECT, Sites -> ${proxyRoute})`);
+      console.log(`[Proxy Smart PAC]: Ativado (Região: ${defaultCountry}, YouTube/Fast.com -> DIRECT, Pobreeflix/Sites/Players -> ${proxyRoute})`);
     } catch (proxyParseErr) {
-      console.warn(`[Proxy Brasil]: Falha ao processar BRAZIL_PROXY: ${proxyParseErr.message}`);
+      console.warn(`[Proxy]: Falha ao processar proxy: ${proxyParseErr.message}`);
     }
   }
 
