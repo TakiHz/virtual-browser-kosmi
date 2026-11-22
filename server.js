@@ -224,13 +224,15 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     startUrl = "https://www.google.com.br?hl=pt-BR";
   }
 
-  // Suporte a Proxy de Baixa Latência (US-East Comcast/Ohio, México, Brasil ou Dedicado)
+  // Configuração de Região e Proxy:
+  // Modo Padrão / Recomendado: IP Oficial dos Estados Unidos Nativo do Hyperbeam (AWS / UpCloud)
+  // - 100% Grátis, SEM LIMITE de internet (unmetered gigabit 1 Gbps - 10 Gbps), latência ultra-baixa (5-15ms)
   const proxyConfig = (
     process.env.PROXY_URL ||
     process.env.US_PROXY ||
     process.env.MEXICO_PROXY ||
     process.env.BRAZIL_PROXY ||
-    "50.238.106.26:3128, 18.222.225.236:3128"
+    ""
   ).trim();
 
   const isMexico = !!(
@@ -253,7 +255,7 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     height: 720,
     locale: {
       language: defaultLanguage,
-      country: defaultCountry, // México (MX) ou Brasil (BR)
+      country: defaultCountry, // Estados Unidos (US) ou México (MX)
     },
     timeout: {
       offline: 300, // Desliga 5 minutos após o último sair para economizar recursos
@@ -337,6 +339,8 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     } catch (proxyParseErr) {
       console.warn(`[Proxy]: Falha ao processar proxy: ${proxyParseErr.message}`);
     }
+  } else {
+    console.log(`[Hyperbeam Conexão Direta]: Rodando com IP Oficial dos Estados Unidos (AWS/UpCloud) - 1 Gbps sem limite de dados`);
   }
 
   for (let attempt = 1; attempt <= retries; attempt++) {
