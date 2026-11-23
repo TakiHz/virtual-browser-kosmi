@@ -110,6 +110,8 @@ const roomElements = {
   btnTogglePopupBlock: document.getElementById("btn-toggle-popup-block"),
   btnMute: document.getElementById("btn-mute"),
   volumeSlider: document.getElementById("volume-slider"),
+  volumeBoostLabel: document.getElementById("volume-boost-label"),
+  btnVirtualFs: document.getElementById("btn-virtual-fs"),
   btnFullscreen: document.getElementById("btn-fullscreen"),
   btnFullscreenExit: document.getElementById("btn-fullscreen-exit"),
   btnToggleSidebar: document.getElementById("btn-toggle-sidebar"),
@@ -1186,21 +1188,98 @@ async function joinRoom(rawCode) {
   }
 }
 
+// ====================================================
+// WEB AUDIO API BOOSTER (AMPLIFICAÇÃO TURBO ATÉ 300%)
+// ====================================================
+let audioCtx = null;
+let boostGainNode = null;
+let boostCompressor = null;
+let boostSourceNode = null;
+
+function setupAudioBooster(track) {
+  if (!track) return;
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      console.warn("[AudioBooster] Web Audio API não suportada.");
+      return;
+    }
+
+    if (!audioCtx) {
+      audioCtx = new AudioContextClass();
+    }
+
+    const unlockAudio = () => {
+      if (audioCtx && audioCtx.state === "suspended") {
+        audioCtx.resume().catch(() => {});
+      }
+    };
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {});
+      window.addEventListener("click", unlockAudio, { once: true });
+      window.addEventListener("touchstart", unlockAudio, { once: true });
+    }
+
+    const stream = new MediaStream([track]);
+    if (boostSourceNode) {
+      try {
+        boostSourceNode.disconnect();
+      } catch (_) {}
+    }
+    boostSourceNode = audioCtx.createMediaStreamSource(stream);
+
+    if (!boostGainNode) {
+      boostGainNode = audioCtx.createGain();
+      const currentSliderVal = parseFloat(roomElements.volumeSlider ? roomElements.volumeSlider.value : "2.5");
+      boostGainNode.gain.value = currentSliderVal;
+    }
+
+    if (!boostCompressor) {
+      // Compressor dinâmico profissional para evitar saturação/clipping ao amplificar até 300%
+      boostCompressor = audioCtx.createDynamicsCompressor();
+      boostCompressor.threshold.setValueAtTime(-14, audioCtx.currentTime);
+      boostCompressor.knee.setValueAtTime(25, audioCtx.currentTime);
+      boostCompressor.ratio.setValueAtTime(10, audioCtx.currentTime);
+      boostCompressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+      boostCompressor.release.setValueAtTime(0.25, audioCtx.currentTime);
+    }
+
+    boostSourceNode.connect(boostGainNode);
+    boostGainNode.connect(boostCompressor);
+    boostCompressor.connect(audioCtx.destination);
+
+    console.log(`[AudioBooster] Web Audio ativo! Volume amplificado para ${Math.round(boostGainNode.gain.value * 100)}% com compressor anti-distorção.`);
+  } catch (err) {
+    console.warn("[AudioBooster error]:", err);
+  }
+}
+
 async function mountHyperbeam(embedUrl) {
   try {
     // Limpa o container antes de montar
     roomElements.browserMount.innerHTML = "";
 
-    // Instancia o cliente WebRTC do Hyperbeam
+    // Instancia o cliente WebRTC do Hyperbeam com Booster de Áudio 300%
     state.hbInstance = await Hyperbeam(roomElements.browserMount, embedUrl, {
       disableInput: true, // Inicia como espectador até assumir controle
       delegateKeyboard: true,
       playoutDelay: true, // Suaviza o vídeo eliminando frame drops e travamentos de WebRTC
-      volume: parseFloat(roomElements.volumeSlider.value),
+      volume: Math.min(1, parseFloat(roomElements.volumeSlider ? roomElements.volumeSlider.value : "1")),
+      audioTrackCb: (track) => {
+        setupAudioBooster(track);
+      },
       onDisconnect: () => {
         showToast("Navegador virtual desconectado.", "info");
       },
     });
+
+    // Trava resolução da VM Hyperbeam estritamente no padrão HD 16:9 (1280x720)
+    // Previne distorções na transmissão para quem assiste no PC
+    if (state.hbInstance && typeof state.hbInstance.resize === "function") {
+      try {
+        state.hbInstance.resize(1280, 720);
+      } catch (_) {}
+    }
 
     // Permissões completas de tela cheia, autoplay e mídia no iframe do Hyperbeam
     const ensureIframePermissions = () => {
@@ -1836,28 +1915,83 @@ if (roomElements.btnRoomNavVizer) {
 }
 
 // ====================================================
-// CONTROLES DE ÁUDIO & TELA CHEIA
+// CONTROLES DE ÁUDIO (AMPLIFICADOR TURBO 300%) & TELA CHEIA
 // ====================================================
-roomElements.volumeSlider.addEventListener("input", (e) => {
-  const vol = parseFloat(e.target.value);
-  if (state.hbInstance) {
-    state.hbInstance.volume = vol;
-  }
-  roomElements.btnMute.textContent = vol === 0 ? "🔇" : "🔊";
-});
+if (roomElements.volumeSlider) {
+  roomElements.volumeSlider.addEventListener("input", (e) => {
+    const vol = parseFloat(e.target.value);
 
-roomElements.btnMute.addEventListener("click", () => {
-  if (!state.hbInstance) return;
-  if (state.hbInstance.volume > 0) {
-    state.hbInstance.volume = 0;
-    roomElements.volumeSlider.value = 0;
-    roomElements.btnMute.textContent = "🔇";
-  } else {
-    state.hbInstance.volume = 1;
-    roomElements.volumeSlider.value = 1;
-    roomElements.btnMute.textContent = "🔊";
-  }
-});
+    // Amplificação via Web Audio API (suporta até 300% / 3.0x)
+    if (boostGainNode) {
+      boostGainNode.gain.value = vol;
+    }
+
+    // Volume padrão do Hyperbeam (limitado a 1.0)
+    if (state.hbInstance) {
+      try {
+        state.hbInstance.volume = Math.min(1, vol);
+      } catch (_) {}
+    }
+
+    if (roomElements.btnMute) {
+      roomElements.btnMute.textContent = vol === 0 ? "🔇" : "🔊";
+    }
+
+    const boostLabel = roomElements.volumeBoostLabel || document.getElementById("volume-boost-label");
+    if (boostLabel) {
+      const pct = Math.round(vol * 100);
+      boostLabel.textContent = `${pct}%`;
+      if (vol > 1) {
+        boostLabel.classList.add("turbo");
+      } else {
+        boostLabel.classList.remove("turbo");
+      }
+    }
+  });
+}
+
+if (roomElements.btnMute) {
+  roomElements.btnMute.addEventListener("click", () => {
+    if (!roomElements.volumeSlider) return;
+    const currentVol = parseFloat(roomElements.volumeSlider.value);
+    const boostLabel = roomElements.volumeBoostLabel || document.getElementById("volume-boost-label");
+
+    if (currentVol > 0) {
+      roomElements.volumeSlider.dataset.prevVolume = currentVol;
+      roomElements.volumeSlider.value = 0;
+      if (boostGainNode) boostGainNode.gain.value = 0;
+      if (state.hbInstance) {
+        try {
+          state.hbInstance.volume = 0;
+        } catch (_) {}
+      }
+      roomElements.btnMute.textContent = "🔇";
+      if (boostLabel) {
+        boostLabel.textContent = "0%";
+        boostLabel.classList.remove("turbo");
+      }
+    } else {
+      const restoreVol = parseFloat(roomElements.volumeSlider.dataset.prevVolume || "2.5");
+      roomElements.volumeSlider.value = restoreVol;
+      if (boostGainNode) boostGainNode.gain.value = restoreVol;
+      if (state.hbInstance) {
+        try {
+          state.hbInstance.volume = Math.min(1, restoreVol);
+        } catch (_) {}
+      }
+      roomElements.btnMute.textContent = "🔊";
+      if (boostLabel) {
+        const pct = Math.round(restoreVol * 100);
+        boostLabel.textContent = `${pct}%`;
+        if (restoreVol > 1) {
+          boostLabel.classList.add("turbo");
+        } else {
+          boostLabel.classList.remove("turbo");
+        }
+      }
+    }
+  });
+}
 
 // ALTERNAR BLOQUEADOR DE POP-UPS
 if (roomElements.btnTogglePopupBlock) {
@@ -2118,10 +2252,11 @@ async function enterFullscreenWithLandscape() {
   // 3. Aciona o travamento horizontal se suportado
   await lockLandscapeOrientationSafely();
 
-  // 4. Redimensiona dinamicamente a resolução da VM Hyperbeam
+  // 4. Trava a VM remota estritamente em 16:9 widescreen HD (1280x720)
+  // Revertido o modo de tela vertical para celular, evitando barras pretas no PC
   if (state.hbInstance && typeof state.hbInstance.resize === "function") {
     try {
-      state.hbInstance.resize(window.innerWidth, window.innerHeight);
+      state.hbInstance.resize(1280, 720);
     } catch (_) {}
   }
 
@@ -2175,13 +2310,11 @@ function handleFullscreenChange() {
   const isFs = isNativeFs || isEmulatedFullscreen;
   updateFullscreenUIState(isFs);
 
+  // Mantém SEMPRE a VM Hyperbeam na proporção 16:9 (1280x720) compartilhada
+  // evitando que celulares redimensionem o navegador dos PCs na mesma sala
   if (state.hbInstance && typeof state.hbInstance.resize === "function") {
     try {
-      if (isFs) {
-        state.hbInstance.resize(window.innerWidth, window.innerHeight);
-      } else {
-        state.hbInstance.resize(1280, 720);
-      }
+      state.hbInstance.resize(1280, 720);
     } catch (err) {
       console.warn("[Hyperbeam resize error]:", err.message);
     }
@@ -2199,6 +2332,45 @@ document.addEventListener("fullscreenchange", handleFullscreenChange);
 document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
 document.addEventListener("mozfullscreenchange", handleFullscreenChange);
 document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
+// Dispara tecla de tela cheia no player interno do navegador virtual (F11 e tecla 'f')
+function triggerVirtualBrowserFullscreen() {
+  if (!state.hbInstance) {
+    showToast("Navegador virtual não iniciado.", "warning");
+    return;
+  }
+
+  try {
+    // 1. Envia tecla F11 (Fullscreen nativo do Chromium virtual)
+    state.hbInstance.sendEvent({ type: "keydown", key: "F11" });
+    setTimeout(() => {
+      if (state.hbInstance) state.hbInstance.sendEvent({ type: "keyup", key: "F11" });
+    }, 50);
+
+    // 2. Envia tecla 'f' (Atalho padrão de tela cheia de players de vídeo como Superflixapi / YouTube / HTML5)
+    setTimeout(() => {
+      if (state.hbInstance) {
+        state.hbInstance.sendEvent({ type: "keydown", key: "f" });
+        setTimeout(() => {
+          if (state.hbInstance) state.hbInstance.sendEvent({ type: "keyup", key: "f" });
+        }, 50);
+      }
+    }, 100);
+
+    showToast("Tela Cheia (F11 / F) enviada ao player virtual!", "success");
+  } catch (err) {
+    console.warn("[Virtual Fullscreen error]:", err);
+    showToast("Erro ao acionar tela cheia no player virtual.", "error");
+  }
+}
+
+const btnVirtualFs = document.getElementById("btn-virtual-fs");
+if (btnVirtualFs) {
+  btnVirtualFs.addEventListener("click", (e) => {
+    e.stopPropagation();
+    triggerVirtualBrowserFullscreen();
+  });
+}
 
 if (roomElements.btnFullscreen) {
   roomElements.btnFullscreen.addEventListener("click", () => {

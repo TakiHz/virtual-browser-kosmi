@@ -392,11 +392,17 @@
           🛡️ Pop-ups: ON
         </button>
 
-        <!-- Volume -->
-        <div class="volume-control">
-          <button id="btn-mute" class="btn-dock-icon" title="Silenciar">🔊</button>
-          <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1" title="Volume" />
+        <!-- Volume com Booster 300% -->
+        <div class="volume-control" title="Amplificador de Volume Turbo (até 300%)">
+          <button id="btn-mute" class="btn-dock-icon" title="Silenciar / Ativar">🔊</button>
+          <input type="range" id="volume-slider" min="0" max="3" step="0.1" value="2.5" title="Volume Amplificado (Turbo Boost até 300%)" />
+          <span id="volume-boost-label" class="volume-boost-tag">Boost</span>
         </div>
+
+        <!-- Tela Cheia do Player no Virtual (F11) -->
+        <button id="btn-virtual-fs" class="btn-dock-icon btn-virtual-fs" title="Maximizar / Tela Cheia do player dentro do navegador virtual (F11 / F)">
+          🖥️
+        </button>
 
         <!-- Tela Cheia -->
         <button id="btn-fullscreen" class="btn-dock-icon" title="Tela Cheia">⛶</button>
