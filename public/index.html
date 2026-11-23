@@ -297,6 +297,34 @@
       </div>
     </div>
 
+    <!-- DOCK DE CONTROLES DO NAVEGADOR (PARTE INFERIOR DA TELA NO MODO PC) -->
+    <div class="room-dock slim" id="room-dock">
+      <!-- Controle Integrado (Verde = No Controle, Vermelho = Fora do Controle) -->
+      <button id="btn-toggle-control" class="btn-dock btn-dock-slim control-inactive" title="Clique para assumir o controle do navegador virtual">
+        🎮 Controle
+      </button>
+
+      <!-- Bloqueador de Pop-ups Inteligente -->
+      <button id="btn-toggle-popup-block" class="btn-dock-pill btn-dock-pill-slim active" title="Clique para alternar o bloqueador de pop-ups">
+        🛡️ Pop-ups: ON
+      </button>
+
+      <!-- Volume com Booster 300% -->
+      <div class="volume-control" title="Amplificador de Volume Turbo (até 300%)">
+        <button id="btn-mute" class="btn-dock-icon" title="Silenciar / Ativar">🔊</button>
+        <input type="range" id="volume-slider" min="0" max="3" step="0.1" value="2.5" title="Volume Amplificado (Turbo Boost até 300%)" />
+        <span id="volume-boost-label" class="volume-boost-tag">Boost</span>
+      </div>
+
+      <!-- Tela Cheia -->
+      <button id="btn-fullscreen" class="btn-dock-icon" title="Tela Cheia">⛶</button>
+
+      <!-- Seta Para Baixo: Ocultar toda a barra de controles -->
+      <button id="btn-collapse-dock" class="btn-dock-icon btn-collapse" title="Ocultar toda a barra de controles">
+        <span class="collapse-arrow" id="collapse-arrow-icon">▼</span>
+      </button>
+    </div>
+
     <!-- PAINEL DA DIREITA NO PC (TUDO À DIREITA) / LAYOUT INTEGRADO NO CELULAR -->
     <div class="room-side-panel" id="room-side-panel">
       <!-- 1. CABEÇALHO DA SALA -->
@@ -366,35 +394,7 @@
         </form>
       </header>
 
-      <!-- 2. DOCK DE CONTROLES DO NAVEGADOR -->
-      <div class="room-dock slim" id="room-dock">
-        <!-- Controle Integrado (Verde = No Controle, Vermelho = Fora do Controle) -->
-        <button id="btn-toggle-control" class="btn-dock btn-dock-slim control-inactive" title="Clique para assumir o controle do navegador virtual">
-          🎮 Controle
-        </button>
-
-        <!-- Bloqueador de Pop-ups Inteligente -->
-        <button id="btn-toggle-popup-block" class="btn-dock-pill btn-dock-pill-slim active" title="Clique para alternar o bloqueador de pop-ups">
-          🛡️ Pop-ups: ON
-        </button>
-
-        <!-- Volume com Booster 300% -->
-        <div class="volume-control" title="Amplificador de Volume Turbo (até 300%)">
-          <button id="btn-mute" class="btn-dock-icon" title="Silenciar / Ativar">🔊</button>
-          <input type="range" id="volume-slider" min="0" max="3" step="0.1" value="2.5" title="Volume Amplificado (Turbo Boost até 300%)" />
-          <span id="volume-boost-label" class="volume-boost-tag">Boost</span>
-        </div>
-
-        <!-- Tela Cheia -->
-        <button id="btn-fullscreen" class="btn-dock-icon" title="Tela Cheia">⛶</button>
-
-        <!-- Seta Para Baixo: Ocultar toda a barra de controles -->
-        <button id="btn-collapse-dock" class="btn-dock-icon btn-collapse" title="Ocultar toda a barra de controles">
-          <span class="collapse-arrow" id="collapse-arrow-icon">▼</span>
-        </button>
-      </div>
-
-      <!-- 3. CHAT E PARTICIPANTES (Abaixo do player no celular, na coluna da direita no PC) -->
+      <!-- 2. CHAT E PARTICIPANTES (Abaixo do player no celular, na coluna da direita no PC) -->
       <aside class="room-sidebar" id="room-sidebar">
         <div class="sidebar-header">
           <div class="sidebar-tabs">

@@ -2448,27 +2448,28 @@ body.fullscreen-active {
   box-shadow: 0 0 8px #4ade80;
 }
 
-/* 2. DOCK DE CONTROLES DO NAVEGADOR */
+/* 2. DOCK DE CONTROLES DO NAVEGADOR (PARTE INFERIOR DA TELA NO MODO PC) */
 .room-dock {
-  flex-shrink: 0;
-  position: static;
-  transform: none;
-  width: 100%;
-  box-sizing: border-box;
-  border-radius: 0;
-  border: none;
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-elevated);
-  padding: 6px 10px;
+  position: absolute;
+  bottom: 24px;
+  left: calc((100vw - 380px) / 2);
+  transform: translateX(-50%);
+  z-index: 50;
+  background: rgba(18, 19, 22, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-start;
-  gap: 6px;
-  box-shadow: none;
-  max-width: 100%;
-  z-index: 20;
-  transition: all 0.2s ease;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 1px rgba(255, 255, 255, 0.2);
+  pointer-events: auto;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+  box-sizing: border-box;
+  max-width: calc(100vw - 420px);
 }
 
 .room-dock > * {
@@ -2480,10 +2481,21 @@ body.fullscreen-active {
 }
 
 .room-dock.slim {
-  padding: 6px 10px;
+  padding: 6px 14px;
   gap: 8px;
   display: flex;
   align-items: center;
+}
+
+/* Em tela cheia no PC, centraliza no meio exato da tela */
+body.fullscreen-active .room-dock,
+:fullscreen .room-dock,
+:-webkit-full-screen .room-dock {
+  left: 50% !important;
+  bottom: 24px !important;
+  transform: translateX(-50%) !important;
+  z-index: 1000001 !important;
+  max-width: 90vw !important;
 }
 
 .volume-control {
@@ -3194,13 +3206,15 @@ body.fullscreen-active {
     object-fit: contain !important;
   }
 
-  /* 3. Dock de Controles Logo Abaixo do Player */
+  /* 3. Dock de Controles Logo Abaixo do Player no Celular */
   .room-dock {
     order: 3 !important;
     flex-shrink: 0 !important;
     width: 100% !important;
     position: static !important;
     transform: none !important;
+    left: auto !important;
+    bottom: auto !important;
     border-radius: 0 !important;
     border: none !important;
     border-bottom: 1px solid var(--border-subtle) !important;
@@ -3217,6 +3231,7 @@ body.fullscreen-active {
     box-shadow: none !important;
     max-width: 100vw !important;
     box-sizing: border-box !important;
+    z-index: 20 !important;
   }
 
   .room-dock::-webkit-scrollbar {
