@@ -113,18 +113,18 @@
             <div class="field-group">
               <div class="field-label-row">
                 <label for="create-start-url">URL Inicial (Site ou Streaming)</label>
-                <span class="field-hint">Pobreeflix ou YouTube</span>
+                <span class="field-hint">Vizer ou YouTube</span>
               </div>
               <div class="url-input-container">
-                <input type="text" id="create-start-url" value="https://pobreeflix.com/" placeholder="Cole link do Pobreeflix, YouTube ou .m3u8..." />
-                <button type="button" class="btn-url-quick-alt" id="btn-toggle-quick-alt" title="Alternar para YouTube (alternativa ao Pobreeflix)">
+                <input type="text" id="create-start-url" value="https://vizer.bio/" placeholder="Cole link do Vizer, YouTube ou .m3u8..." />
+                <button type="button" class="btn-url-quick-alt" id="btn-toggle-quick-alt" title="Alternar para YouTube (alternativa ao Vizer)">
                   ▶️ YouTube
                 </button>
               </div>
               <div class="url-choice-chips">
-                <button type="button" class="choice-chip active" id="chip-url-pobreeflix" data-url="https://pobreeflix.com/" title="Usar Pobreeflix como primeira opção">
-                  <span class="chip-icon">🍿</span>
-                  <span class="chip-text">Pobreeflix</span>
+                <button type="button" class="choice-chip active" id="chip-url-vizer" data-url="https://vizer.bio/" title="Usar Vizer como primeira opção">
+                  <span class="chip-icon">🎬</span>
+                  <span class="chip-text">Vizer</span>
                 </button>
                 <button type="button" class="choice-chip" id="chip-url-youtube" data-url="https://www.youtube.com?gl=BR&hl=pt" title="Usar YouTube (Brasil)">
                   <span class="chip-icon">▶️</span>
@@ -208,6 +208,11 @@
         </div>
       </div>
 
+      <!-- BOTÃO FLUTUANTE PARA ENTRAR EM TELA CHEIA DIRETO NO VÍDEO -->
+      <button id="btn-fullscreen-floating" class="btn-fullscreen-floating" type="button" title="Assistir em Tela Cheia (⛶)">
+        ⛶ Tela Cheia
+      </button>
+
       <!-- BOTÃO FLUTUANTE PARA REEXIBIR CONTROLES QUANDO OCULTADOS PELA SETA -->
       <button id="btn-unhide-dock" class="btn-unhide-dock hidden" title="Mostrar barra de controles">
         ▲ Controles
@@ -283,8 +288,8 @@
           <input type="text" id="input-room-nav-url" placeholder="Navegar para site ou stream .m3u8..." autocomplete="off" />
           <button type="submit" class="btn-nav-go">Ir</button>
           <div class="room-nav-quick-group">
-            <button type="button" class="btn-room-nav-quick" id="btn-room-nav-pobreeflix" data-url="https://pobreeflix.com/" title="Navegar para Pobreeflix (Filmes e Séries)">
-              🍿 Pobreeflix
+            <button type="button" class="btn-room-nav-quick" id="btn-room-nav-vizer" data-url="https://vizer.bio/" title="Navegar para Vizer (Filmes e Séries)">
+              🎬 Vizer
             </button>
             <button type="button" class="btn-room-nav-quick" id="btn-room-nav-youtube" data-url="https://www.youtube.com?gl=BR&hl=pt" title="Navegar para o YouTube (Brasil)">
               ▶️ YouTube

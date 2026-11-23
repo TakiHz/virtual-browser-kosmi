@@ -41,7 +41,7 @@ const lobbyElements = {
   createStartUrl: document.getElementById("create-start-url"),
   btnToggleQuickAlt: document.getElementById("btn-toggle-quick-alt"),
   chipUrlYoutube: document.getElementById("chip-url-youtube"),
-  chipUrlPobreeflix: document.getElementById("chip-url-pobreeflix"),
+  chipUrlVizer: document.getElementById("chip-url-vizer"),
   btnCreateRoom: document.getElementById("btn-create-room"),
   btnCreateText: document.getElementById("btn-create-text"),
   formJoin: document.getElementById("form-join-room"),
@@ -126,7 +126,8 @@ const roomElements = {
   formNav: document.getElementById("form-room-nav"),
   inputNavUrl: document.getElementById("input-room-nav-url"),
   btnRoomNavYoutube: document.getElementById("btn-room-nav-youtube"),
-  btnRoomNavPobreeflix: document.getElementById("btn-room-nav-pobreeflix"),
+  btnRoomNavVizer: document.getElementById("btn-room-nav-vizer"),
+  btnFullscreenFloating: document.getElementById("btn-fullscreen-floating"),
 };
 
 // ====================================================
@@ -904,10 +905,10 @@ lobbyElements.btnLogout.addEventListener("click", async () => {
 });
 
 // ====================================================
-// ATALHOS & ALTERNATIVAS DE STREAMING (POBREEFLIX & YOUTUBE)
+// ATALHOS & ALTERNATIVAS DE STREAMING (VIZER & YOUTUBE)
 // ====================================================
 const PRESET_URLS = {
-  POBREEFLIX: "https://pobreeflix.com/",
+  VIZER: "https://vizer.bio/",
   YOUTUBE: "https://www.youtube.com?gl=BR&hl=pt",
 };
 
@@ -918,7 +919,7 @@ const PRESET_URLS = {
 // Criar Nova Sala
 lobbyElements.formCreate.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const startUrl = lobbyElements.createStartUrl.value.trim() || PRESET_URLS.POBREEFLIX;
+  const startUrl = lobbyElements.createStartUrl.value.trim() || PRESET_URLS.VIZER;
 
   try {
     lobbyElements.btnCreateRoom.disabled = true;
@@ -976,11 +977,11 @@ lobbyElements.formCreate.addEventListener("submit", async (e) => {
 
 function syncUrlPresets(currentUrl) {
   const norm = (currentUrl || "").trim().toLowerCase();
-  const isPobree = norm.includes("pobreeflix");
+  const isVizer = norm.includes("vizer");
   const isYt = norm.includes("youtube.com") || norm.includes("youtu.be");
 
-  if (lobbyElements.chipUrlPobreeflix) {
-    lobbyElements.chipUrlPobreeflix.classList.toggle("active", isPobree);
+  if (lobbyElements.chipUrlVizer) {
+    lobbyElements.chipUrlVizer.classList.toggle("active", isVizer);
   }
   if (lobbyElements.chipUrlYoutube) {
     lobbyElements.chipUrlYoutube.classList.toggle("active", isYt);
@@ -988,12 +989,12 @@ function syncUrlPresets(currentUrl) {
 
   // O botão do lado funciona como alternador direto
   if (lobbyElements.btnToggleQuickAlt) {
-    if (isPobree) {
+    if (isVizer) {
       lobbyElements.btnToggleQuickAlt.innerHTML = "▶️ YouTube";
-      lobbyElements.btnToggleQuickAlt.title = "Alternar para YouTube (alternativa ao Pobreeflix)";
+      lobbyElements.btnToggleQuickAlt.title = "Alternar para YouTube (alternativa ao Vizer)";
     } else {
-      lobbyElements.btnToggleQuickAlt.innerHTML = "🍿 Pobreeflix";
-      lobbyElements.btnToggleQuickAlt.title = "Alternar para Pobreeflix (primeira opção)";
+      lobbyElements.btnToggleQuickAlt.innerHTML = "🎬 Vizer";
+      lobbyElements.btnToggleQuickAlt.title = "Alternar para Vizer (primeira opção)";
     }
   }
 }
@@ -1002,17 +1003,17 @@ if (lobbyElements.createStartUrl) {
   lobbyElements.createStartUrl.addEventListener("input", () => {
     syncUrlPresets(lobbyElements.createStartUrl.value);
   });
-  // Sincroniza estado inicial (Pobreeflix ativo por padrão)
-  syncUrlPresets(lobbyElements.createStartUrl.value || PRESET_URLS.POBREEFLIX);
+  // Sincroniza estado inicial (Vizer ativo por padrão)
+  syncUrlPresets(lobbyElements.createStartUrl.value || PRESET_URLS.VIZER);
 }
 
 if (lobbyElements.btnToggleQuickAlt) {
   lobbyElements.btnToggleQuickAlt.addEventListener("click", () => {
     const current = (lobbyElements.createStartUrl.value || "").trim().toLowerCase();
-    if (current.includes("pobreeflix")) {
+    if (current.includes("vizer")) {
       lobbyElements.createStartUrl.value = PRESET_URLS.YOUTUBE;
     } else {
-      lobbyElements.createStartUrl.value = PRESET_URLS.POBREEFLIX;
+      lobbyElements.createStartUrl.value = PRESET_URLS.VIZER;
     }
     syncUrlPresets(lobbyElements.createStartUrl.value);
     showToast(`URL definida: ${lobbyElements.createStartUrl.value}`, "info");
@@ -1026,10 +1027,10 @@ if (lobbyElements.chipUrlYoutube) {
   });
 }
 
-if (lobbyElements.chipUrlPobreeflix) {
-  lobbyElements.chipUrlPobreeflix.addEventListener("click", () => {
-    lobbyElements.createStartUrl.value = PRESET_URLS.POBREEFLIX;
-    syncUrlPresets(PRESET_URLS.POBREEFLIX);
+if (lobbyElements.chipUrlVizer) {
+  lobbyElements.chipUrlVizer.addEventListener("click", () => {
+    lobbyElements.createStartUrl.value = PRESET_URLS.VIZER;
+    syncUrlPresets(PRESET_URLS.VIZER);
   });
 }
 
@@ -1153,6 +1154,27 @@ async function mountHyperbeam(embedUrl) {
         showToast("Navegador virtual desconectado.", "info");
       },
     });
+
+    // Permissões completas de tela cheia, autoplay e mídia no iframe do Hyperbeam
+    const ensureIframePermissions = () => {
+      const iframes = roomElements.browserMount.querySelectorAll("iframe");
+      iframes.forEach((iframe) => {
+        iframe.setAttribute(
+          "allow",
+          "fullscreen; accelerometer; autoplay; clipboard-read; clipboard-write; display-capture; encrypted-media; gyroscope; picture-in-picture; web-share"
+        );
+        iframe.setAttribute("allowfullscreen", "true");
+        iframe.setAttribute("webkitallowfullscreen", "true");
+        iframe.setAttribute("mozallowfullscreen", "true");
+      });
+    };
+    ensureIframePermissions();
+
+    // Observa alterações no DOM do browserMount para reaplicar atributos caso o iframe seja recriado
+    if (window.MutationObserver) {
+      const observer = new MutationObserver(ensureIframePermissions);
+      observer.observe(roomElements.browserMount, { childList: true, subtree: true });
+    }
 
     // Ativa o protetor anti-popup inteligente na sessão
     setupAntiPopupGuard(state.hbInstance);
@@ -1756,9 +1778,9 @@ if (roomElements.btnRoomNavYoutube) {
   });
 }
 
-if (roomElements.btnRoomNavPobreeflix) {
-  roomElements.btnRoomNavPobreeflix.addEventListener("click", async () => {
-    await navigateHyperbeamToUrl(PRESET_URLS.POBREEFLIX);
+if (roomElements.btnRoomNavVizer) {
+  roomElements.btnRoomNavVizer.addEventListener("click", async () => {
+    await navigateHyperbeamToUrl(PRESET_URLS.VIZER);
   });
 }
 
@@ -1825,11 +1847,19 @@ function isCurrentlyFullscreen() {
 
 function updateFullscreenUIState(isFs) {
   const btnExit = document.getElementById("btn-fullscreen-exit");
+  const btnFloating = document.getElementById("btn-fullscreen-floating");
   if (btnExit) {
     if (isFs) {
       btnExit.classList.remove("hidden");
     } else {
       btnExit.classList.add("hidden");
+    }
+  }
+  if (btnFloating) {
+    if (isFs) {
+      btnFloating.classList.add("hidden");
+    } else {
+      btnFloating.classList.remove("hidden");
     }
   }
 
@@ -1937,7 +1967,14 @@ async function enterFullscreenWithLandscape() {
   // 3. Aciona o travamento horizontal se suportado
   await lockLandscapeOrientationSafely();
 
-  // 4. Se for dispositivo móvel em pé, avisa que pode virar para horizontal
+  // 4. Redimensiona dinamicamente a resolução da VM Hyperbeam
+  if (state.hbInstance && typeof state.hbInstance.resize === "function") {
+    try {
+      state.hbInstance.resize(window.innerWidth, window.innerHeight);
+    } catch (_) {}
+  }
+
+  // 5. Se for dispositivo móvel em pé, avisa que pode virar para horizontal
   if (
     window.innerWidth < window.innerHeight &&
     (window.innerWidth <= 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
@@ -1971,21 +2008,39 @@ async function exitFullscreenAndUnlock() {
     console.warn("Erro ao sair de tela cheia:", err.message);
   }
 
+  // 3. Restaura resolução padrão da VM Hyperbeam
+  if (state.hbInstance && typeof state.hbInstance.resize === "function") {
+    try {
+      state.hbInstance.resize(1280, 720);
+    } catch (_) {}
+  }
+
   updateFullscreenUIState(false);
   unlockOrientationSafely();
 }
 
 function handleFullscreenChange() {
   const isNativeFs = !!getActiveFullscreenElement();
-  if (!isNativeFs && !isEmulatedFullscreen) {
-    updateFullscreenUIState(false);
+  const isFs = isNativeFs || isEmulatedFullscreen;
+  updateFullscreenUIState(isFs);
+
+  if (state.hbInstance && typeof state.hbInstance.resize === "function") {
+    try {
+      if (isFs) {
+        state.hbInstance.resize(window.innerWidth, window.innerHeight);
+      } else {
+        state.hbInstance.resize(1280, 720);
+      }
+    } catch (err) {
+      console.warn("[Hyperbeam resize error]:", err.message);
+    }
+  }
+
+  if (!isFs) {
     shouldLockLandscape = false;
     unlockOrientationSafely();
-  } else if (isNativeFs) {
-    updateFullscreenUIState(true);
-    if (shouldLockLandscape) {
-      lockLandscapeOrientationSafely();
-    }
+  } else if (shouldLockLandscape) {
+    lockLandscapeOrientationSafely();
   }
 }
 
@@ -2004,6 +2059,14 @@ if (roomElements.btnFullscreen) {
   });
 }
 
+const btnFsFloating = document.getElementById("btn-fullscreen-floating");
+if (btnFsFloating) {
+  btnFsFloating.addEventListener("click", (e) => {
+    e.stopPropagation();
+    enterFullscreenWithLandscape();
+  });
+}
+
 const btnFsExitFloating = document.getElementById("btn-fullscreen-exit");
 if (btnFsExitFloating) {
   btnFsExitFloating.addEventListener("click", (e) => {
@@ -2012,10 +2075,41 @@ if (btnFsExitFloating) {
   });
 }
 
-// Fechar tela cheia com tecla ESC
+// Duplo clique ou duplo toque no player para alternar tela cheia (estilo YouTube/Netflix)
+if (roomElements.browserMount) {
+  roomElements.browserMount.addEventListener("dblclick", (e) => {
+    if (!isCurrentlyFullscreen()) {
+      enterFullscreenWithLandscape();
+    } else {
+      exitFullscreenAndUnlock();
+    }
+  });
+
+  let lastMountTap = 0;
+  roomElements.browserMount.addEventListener("touchend", (e) => {
+    const now = Date.now();
+    if (now - lastMountTap < 320 && now - lastMountTap > 50) {
+      if (!isCurrentlyFullscreen()) {
+        enterFullscreenWithLandscape();
+      } else {
+        exitFullscreenAndUnlock();
+      }
+    }
+    lastMountTap = now;
+  }, { passive: true });
+}
+
+// Fechar tela cheia com tecla ESC ou alternar com tecla F
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && isCurrentlyFullscreen()) {
     exitFullscreenAndUnlock();
+  }
+  if ((e.key === "f" || e.key === "F") && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
+    if (!isCurrentlyFullscreen()) {
+      enterFullscreenWithLandscape();
+    } else {
+      exitFullscreenAndUnlock();
+    }
   }
 });
 

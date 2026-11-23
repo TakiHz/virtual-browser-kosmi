@@ -206,7 +206,7 @@ function generateRoomCode() {
   return code;
 }
 
-async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries = 2, requestedRegion = null) {
+async function requestHyperbeamVM(startUrl = "https://vizer.bio/", retries = 2, requestedRegion = null) {
   if (!HYPERBEAM_API_KEY) {
     throw new Error(
       "A chave HYPERBEAM_API_KEY não foi configurada no servidor. Obtenha uma chave em https://hyperbeam.com e adicione nas variáveis de ambiente."
@@ -319,8 +319,7 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
 
       // Roteamento inteligente Smart PAC:
       // - Fast.com, Speedtest e YouTube vão DIRECT para medir banda máxima e economizar recursos do proxy
-      // - Pobreeflix e os players de filmes/séries (mgeb.space, nhdapi, etc.) DEVEM passar pelo proxy regional (México/Brasil)
-      //   para que o player não bloqueie o IP dos datacenters dos EUA e funcione perfeitamente!
+      // - Vizer e players de filmes passam pelo IP regional (${defaultCountry})
       const smartPacScript = `function FindProxyForURL(url, host) {
   var h = ("" + host).toLowerCase();
   var u = ("" + url).toLowerCase();
@@ -345,7 +344,7 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     return "DIRECT";
   }
 
-  // 4. Pobreeflix, players externos e vídeos de filmes passam pelo IP regional (${defaultCountry}) para liberar o player!
+  // 4. Sites de filmes e players passam pela rota do proxy regional (${defaultCountry})
   return "${proxyRoute}";
 }`;
 
@@ -354,7 +353,7 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
         ...(defaultUser ? { username: defaultUser } : {}),
         ...(defaultPass ? { password: defaultPass } : {}),
       };
-      console.log(`[Proxy Smart PAC]: Ativado (Região: ${defaultCountry}, YouTube/Fast.com -> DIRECT, Pobreeflix/Sites/Players -> ${proxyRoute})`);
+      console.log(`[Proxy Smart PAC]: Ativado (Região: ${defaultCountry}, YouTube/Fast.com -> DIRECT, Sites/Players -> ${proxyRoute})`);
     } catch (proxyParseErr) {
       console.warn(`[Proxy]: Falha ao processar proxy: ${proxyParseErr.message}`);
     }
@@ -396,7 +395,7 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
 app.post("/api/rooms", authMiddleware, async (req, res) => {
   try {
     let { startUrl, region } = req.body || {};
-    startUrl = startUrl?.trim() || "https://pobreeflix.com/";
+    startUrl = startUrl?.trim() || "https://vizer.bio/";
 
     // REGRA: Limite estrito de apenas 1 sala ativa por conta
     const existingRoom = await getRoomByHostNickname(req.user.nickname);

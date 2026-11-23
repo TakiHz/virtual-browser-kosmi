@@ -1496,6 +1496,49 @@ body {
   display: none !important;
 }
 
+/* BOTÃO FLUTUANTE PARA ENTRAR EM TELA CHEIA DIRETO NO VÍDEO */
+.btn-fullscreen-floating {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  top: max(14px, env(safe-area-inset-top, 14px));
+  right: max(14px, env(safe-area-inset-right, 14px));
+  z-index: 99999;
+  background: rgba(18, 19, 22, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #e5f0e7;
+  border: 1px solid rgba(133, 194, 146, 0.35);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-family: var(--font-main);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.85;
+  transition: opacity 0.3s ease, transform 0.2s ease, background 0.2s ease;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.btn-fullscreen-floating:hover,
+.btn-fullscreen-floating:active {
+  opacity: 1;
+  background: rgba(46, 77, 53, 0.95);
+  border-color: var(--accent);
+  transform: scale(1.04);
+}
+
+.btn-fullscreen-floating.hidden {
+  display: none !important;
+}
+
 /* BOTÃO FLUTUANTE PARA SAIR DA TELA CHEIA */
 .btn-fullscreen-exit {
   position: absolute;
@@ -1590,6 +1633,7 @@ body.fullscreen-active .browser-wrapper #browser-mount {
   align-items: center !important;
   justify-content: center !important;
   background: #000 !important;
+  contain: none !important;
 }
 
 :fullscreen .browser-wrapper #browser-mount > *,
