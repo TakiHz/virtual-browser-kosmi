@@ -252,7 +252,7 @@ async function requestHyperbeamVM(startUrl = "https://vizer.bio/", retries = 2, 
   const vmPayload = {
     start_url: startUrl,
     ...(hyperbeamRegion ? { region: hyperbeamRegion } : {}),
-    kiosk: process.env.HYPERBEAM_KIOSK === "false" ? false : true, // Modo Kiosk: oculta barra de URL, abas e navegação do Chromium virtual (tela cheia limpa de ponta a ponta)
+    kiosk: false,
     ublock: true, // Bloqueio nativo de anúncios, pop-ups invasivos e scripts maliciosos (uBlock Origin)
     webgl: true, // Aceleração gráfica para decodificação de vídeo fluida
     fps: 30, // 30 FPS estável para reprodução de vídeo sem sobrecarga de banda
