@@ -89,7 +89,6 @@ const roomElements = {
   collapseArrowIcon: document.getElementById("collapse-arrow-icon"),
   btnUnhideDock: document.getElementById("btn-unhide-dock"),
   dockCollapsible: document.getElementById("dock-collapsible"),
-  btnToggleKeyboard: document.getElementById("btn-toggle-keyboard"),
   mobileTypingBar: document.getElementById("mobile-typing-bar"),
   mobileKeyboardProxy: document.getElementById("mobile-keyboard-proxy"),
   btnSendTypedText: document.getElementById("btn-send-typed-text"),
@@ -111,7 +110,6 @@ const roomElements = {
   btnMute: document.getElementById("btn-mute"),
   volumeSlider: document.getElementById("volume-slider"),
   volumeBoostLabel: document.getElementById("volume-boost-label"),
-  btnVirtualFs: document.getElementById("btn-virtual-fs"),
   btnFullscreen: document.getElementById("btn-fullscreen"),
   btnFullscreenExit: document.getElementById("btn-fullscreen-exit"),
   btnToggleSidebar: document.getElementById("btn-toggle-sidebar"),
@@ -2427,14 +2425,6 @@ function triggerVirtualBrowserFullscreen() {
     console.warn("[Virtual Fullscreen error]:", err);
     showToast("Erro ao acionar tela cheia no player virtual.", "error");
   }
-}
-
-const btnVirtualFs = document.getElementById("btn-virtual-fs");
-if (btnVirtualFs) {
-  btnVirtualFs.addEventListener("click", (e) => {
-    e.stopPropagation();
-    triggerVirtualBrowserFullscreen();
-  });
 }
 
 if (roomElements.btnFullscreen) {
