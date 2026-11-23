@@ -132,9 +132,6 @@ const roomElements = {
   btnFullscreenFloating: document.getElementById("btn-fullscreen-floating"),
   fullscreenActionBar: document.getElementById("fullscreen-action-bar"),
   btnFullscreenChatToggle: document.getElementById("btn-fullscreen-chat-toggle"),
-  btnFullscreenFitToggle: document.getElementById("btn-fullscreen-fit-toggle"),
-  fsFitIcon: document.getElementById("fs-fit-icon"),
-  fsFitText: document.getElementById("fs-fit-text"),
   fsChatBadge: document.getElementById("fs-chat-badge"),
   fullscreenChatOverlay: document.getElementById("fullscreen-chat-overlay"),
   fsChatMessages: document.getElementById("fs-chat-messages"),
@@ -1305,13 +1302,43 @@ async function mountHyperbeam(embedUrl) {
     // Ativa o protetor anti-popup inteligente na sessão
     setupAntiPopupGuard(state.hbInstance);
 
-    // Ativa suporte touch para celular (mexer mouse com o dedo)
+    // Ativa suporte touch para celular com alinhamento pixel-perfect
     setupMobileTouchAndGestures();
+
+    // Aplica zoom padrão de 125% no navegador virtual conforme solicitado
+    setTimeout(() => {
+      applyVirtualBrowserZoom(1.25);
+    }, 1200);
+    setTimeout(() => {
+      applyVirtualBrowserZoom(1.25);
+    }, 3000);
 
     showToast("Navegador virtual carregado com sucesso!", "success");
   } catch (err) {
     console.error("Erro ao inicializar Hyperbeam:", err);
     showToast("Erro ao conectar no stream do Hyperbeam: " + err.message, "error");
+  }
+}
+
+// ====================================================
+// ZOOM DO NAVEGADOR VIRTUAL (125%)
+// ====================================================
+async function applyVirtualBrowserZoom(factor = 1.25) {
+  if (!state.hbInstance || !state.hbInstance.tabs) return;
+  try {
+    const tabs = await state.hbInstance.tabs.query({});
+    if (tabs && tabs.length > 0) {
+      for (const t of tabs) {
+        if (t.id) {
+          await state.hbInstance.tabs.setZoom(t.id, factor).catch(() => {});
+        }
+      }
+    } else {
+      await state.hbInstance.tabs.setZoom(factor).catch(() => {});
+    }
+    console.log(`[Hyperbeam Zoom]: Zoom de ${Math.round(factor * 100)}% aplicado no navegador virtual.`);
+  } catch (err) {
+    console.warn("[Hyperbeam Zoom error]:", err.message);
   }
 }
 
@@ -1323,6 +1350,14 @@ function setupAntiPopupGuard(hb) {
 
   try {
     hb.tabs.onCreated.addListener(async (tab) => {
+      if (tab && tab.id) {
+        setTimeout(() => {
+          try {
+            hb.tabs.setZoom(tab.id, 1.25);
+          } catch (_) {}
+        }, 800);
+      }
+
       if (!state.blockPopups) return;
 
       try {
@@ -1343,6 +1378,17 @@ function setupAntiPopupGuard(hb) {
         console.warn("[Anti-Popup error]:", err.message);
       }
     });
+
+    if (hb.tabs.onUpdated) {
+      hb.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
+        if (changeInfo.status === "complete") {
+          try {
+            await hb.tabs.setZoom(tabId, 1.25);
+          } catch (_) {}
+        }
+      });
+    }
+
     console.log("🛡️ Anti-Popup Guard ativo no navegador virtual.");
   } catch (err) {
     console.warn("Não foi possível registrar o listener de abas do Hyperbeam:", err);
@@ -1366,14 +1412,53 @@ function setupMobileTouchAndGestures() {
   let lastTwoFingerCenterY = null;
 
   function getNormalizedCoords(touch) {
-    // Busca elemento de vídeo/canvas interno do Hyperbeam para precisão exata
-    const target = mount.querySelector("video") || mount.querySelector("canvas") || mount;
+    // Busca elemento de vídeo/canvas/iframe interno do Hyperbeam para precisão exata
+    const target = mount.querySelector("video") || mount.querySelector("canvas") || mount.querySelector("iframe") || mount;
     const rect = target.getBoundingClientRect();
     if (!rect.width || !rect.height) return { x: 0.5, y: 0.5 };
-    const rawX = touch.clientX - rect.left;
-    const rawY = touch.clientY - rect.top;
-    const x = Math.max(0, Math.min(1, rawX / rect.width));
-    const y = Math.max(0, Math.min(1, rawY / rect.height));
+
+    // Proporção nativa da transmissão da VM Hyperbeam (16:9 = 1.777778)
+    let naturalAspect = 16 / 9;
+    if (target.videoWidth && target.videoHeight && target.videoHeight > 0) {
+      naturalAspect = target.videoWidth / target.videoHeight;
+    }
+
+    const containerAspect = rect.width / rect.height;
+    const computedFit = (window.getComputedStyle(target).objectFit || "contain").toLowerCase();
+
+    let renderedWidth = rect.width;
+    let renderedHeight = rect.height;
+    let renderedLeft = rect.left;
+    let renderedTop = rect.top;
+
+    if (computedFit === "fill") {
+      renderedWidth = rect.width;
+      renderedHeight = rect.height;
+      renderedLeft = rect.left;
+      renderedTop = rect.top;
+    } else {
+      // Modo "contain" (padrão em tela cheia com barras pretas)
+      if (containerAspect > naturalAspect) {
+        // Barras pretas nas laterais (pillarbox) - típico em celulares na horizontal (19.5:9 ou 20:9)
+        renderedHeight = rect.height;
+        renderedWidth = rect.height * naturalAspect;
+        renderedLeft = rect.left + (rect.width - renderedWidth) / 2;
+        renderedTop = rect.top;
+      } else {
+        // Barras pretas no topo e embaixo (letterbox) - típico em celulares na vertical
+        renderedWidth = rect.width;
+        renderedHeight = rect.width / naturalAspect;
+        renderedLeft = rect.left;
+        renderedTop = rect.top + (rect.height - renderedHeight) / 2;
+      }
+    }
+
+    // Calcula coordenadas normalizadas (0 a 1) estritamente sobre a área visível do vídeo
+    const rawX = touch.clientX - renderedLeft;
+    const rawY = touch.clientY - renderedTop;
+    const x = Math.max(0, Math.min(1, rawX / renderedWidth));
+    const y = Math.max(0, Math.min(1, rawY / renderedHeight));
+
     return { x, y };
   }
 
@@ -1884,6 +1969,9 @@ async function navigateHyperbeamToUrl(rawUrl) {
       if (tabs && tabs.length > 0) {
         await state.hbInstance.tabs.update(tabs[0].id, { url });
         showToast("Carregando no navegador virtual...", "success");
+        setTimeout(() => {
+          applyVirtualBrowserZoom(1.25);
+        }, 1500);
         if (roomElements.inputNavUrl) roomElements.inputNavUrl.value = "";
       }
     }
@@ -2017,7 +2105,6 @@ let shouldLockLandscape = false;
 let isEmulatedFullscreen = false;
 let isFsChatOpen = false;
 let unreadFsMessages = 0;
-let isFsFitCover = false;
 let isFsChatUltraTranslucent = false;
 
 function updateFsChatBadge() {
@@ -2071,32 +2158,10 @@ function toggleFsChatOpacity() {
   isFsChatUltraTranslucent = !isFsChatUltraTranslucent;
   if (isFsChatUltraTranslucent) {
     overlay.classList.add("ultra-translucent");
-    showToast("Chat translúcido: 35% de opacidade (visão do vídeo ampliada)", "info");
+    showToast("Chat com transparência máxima (vídeo em destaque)", "info");
   } else {
     overlay.classList.remove("ultra-translucent");
-    showToast("Chat translúcido: 65% de opacidade", "info");
-  }
-}
-
-function toggleFullscreenFit() {
-  const wrapper =
-    document.getElementById("browser-wrapper") ||
-    document.querySelector(".browser-wrapper");
-  if (!wrapper) return;
-  isFsFitCover = !isFsFitCover;
-  const fitIcon = roomElements.fsFitIcon || document.getElementById("fs-fit-icon");
-  const fitText = roomElements.fsFitText || document.getElementById("fs-fit-text");
-
-  if (isFsFitCover) {
-    wrapper.classList.add("fit-cover");
-    if (fitIcon) fitIcon.textContent = "↕️";
-    if (fitText) fitText.textContent = "Preenchido";
-    showToast("Ajuste de Tela: Preencher / Estender sem barras pretas", "info");
-  } else {
-    wrapper.classList.remove("fit-cover");
-    if (fitIcon) fitIcon.textContent = "↔️";
-    if (fitText) fitText.textContent = "Ajustar";
-    showToast("Ajuste de Tela: Proporção original do vídeo (16:9)", "info");
+    showToast("Chat com opacidade alta (90% de contraste)", "info");
   }
 }
 
@@ -2419,14 +2484,6 @@ if (btnFsChatOpacity) {
   btnFsChatOpacity.addEventListener("click", (e) => {
     e.stopPropagation();
     toggleFsChatOpacity();
-  });
-}
-
-const btnFsFitToggle = document.getElementById("btn-fullscreen-fit-toggle");
-if (btnFsFitToggle) {
-  btnFsFitToggle.addEventListener("click", (e) => {
-    e.stopPropagation();
-    toggleFullscreenFit();
   });
 }
 
