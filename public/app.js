@@ -128,6 +128,18 @@ const roomElements = {
   btnRoomNavYoutube: document.getElementById("btn-room-nav-youtube"),
   btnRoomNavVizer: document.getElementById("btn-room-nav-vizer"),
   btnFullscreenFloating: document.getElementById("btn-fullscreen-floating"),
+  fullscreenActionBar: document.getElementById("fullscreen-action-bar"),
+  btnFullscreenChatToggle: document.getElementById("btn-fullscreen-chat-toggle"),
+  btnFullscreenFitToggle: document.getElementById("btn-fullscreen-fit-toggle"),
+  fsFitIcon: document.getElementById("fs-fit-icon"),
+  fsFitText: document.getElementById("fs-fit-text"),
+  fsChatBadge: document.getElementById("fs-chat-badge"),
+  fullscreenChatOverlay: document.getElementById("fullscreen-chat-overlay"),
+  fsChatMessages: document.getElementById("fs-chat-messages"),
+  formFsChat: document.getElementById("form-fs-chat"),
+  fsChatInput: document.getElementById("fs-chat-input"),
+  btnFsChatOpacity: document.getElementById("btn-fs-chat-opacity"),
+  btnFsChatClose: document.getElementById("btn-fs-chat-close"),
 };
 
 // ====================================================
@@ -1830,6 +1842,90 @@ if (roomElements.btnTogglePopupBlock) {
 
 let shouldLockLandscape = false;
 let isEmulatedFullscreen = false;
+let isFsChatOpen = false;
+let unreadFsMessages = 0;
+let isFsFitCover = false;
+let isFsChatUltraTranslucent = false;
+
+function updateFsChatBadge() {
+  const badge = roomElements.fsChatBadge || document.getElementById("fs-chat-badge");
+  if (!badge) return;
+  if (unreadFsMessages > 0) {
+    badge.textContent = unreadFsMessages > 99 ? "99+" : String(unreadFsMessages);
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+function toggleFullscreenChat(forceState) {
+  const overlay = roomElements.fullscreenChatOverlay || document.getElementById("fullscreen-chat-overlay");
+  const chatToggle = roomElements.btnFullscreenChatToggle || document.getElementById("btn-fullscreen-chat-toggle");
+  if (!overlay) return;
+
+  if (typeof forceState === "boolean") {
+    isFsChatOpen = forceState;
+  } else {
+    isFsChatOpen = !isFsChatOpen;
+  }
+
+  if (isFsChatOpen) {
+    overlay.classList.remove("hidden");
+    if (chatToggle) chatToggle.classList.add("active");
+    unreadFsMessages = 0;
+    updateFsChatBadge();
+    const input = roomElements.fsChatInput || document.getElementById("fs-chat-input");
+    if (input) {
+      setTimeout(() => input.focus(), 80);
+    }
+    const msgs = roomElements.fsChatMessages || document.getElementById("fs-chat-messages");
+    if (msgs) {
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  } else {
+    overlay.classList.add("hidden");
+    if (chatToggle) chatToggle.classList.remove("active");
+    const input = roomElements.fsChatInput || document.getElementById("fs-chat-input");
+    if (input) {
+      input.blur();
+    }
+  }
+}
+
+function toggleFsChatOpacity() {
+  const overlay = roomElements.fullscreenChatOverlay || document.getElementById("fullscreen-chat-overlay");
+  if (!overlay) return;
+  isFsChatUltraTranslucent = !isFsChatUltraTranslucent;
+  if (isFsChatUltraTranslucent) {
+    overlay.classList.add("ultra-translucent");
+    showToast("Chat translúcido: 35% de opacidade (visão do vídeo ampliada)", "info");
+  } else {
+    overlay.classList.remove("ultra-translucent");
+    showToast("Chat translúcido: 65% de opacidade", "info");
+  }
+}
+
+function toggleFullscreenFit() {
+  const wrapper =
+    document.getElementById("browser-wrapper") ||
+    document.querySelector(".browser-wrapper");
+  if (!wrapper) return;
+  isFsFitCover = !isFsFitCover;
+  const fitIcon = roomElements.fsFitIcon || document.getElementById("fs-fit-icon");
+  const fitText = roomElements.fsFitText || document.getElementById("fs-fit-text");
+
+  if (isFsFitCover) {
+    wrapper.classList.add("fit-cover");
+    if (fitIcon) fitIcon.textContent = "↕️";
+    if (fitText) fitText.textContent = "Preenchido";
+    showToast("Ajuste de Tela: Preencher / Estender sem barras pretas", "info");
+  } else {
+    wrapper.classList.remove("fit-cover");
+    if (fitIcon) fitIcon.textContent = "↔️";
+    if (fitText) fitText.textContent = "Ajustar";
+    showToast("Ajuste de Tela: Proporção original do vídeo (16:9)", "info");
+  }
+}
 
 function getActiveFullscreenElement() {
   return (
@@ -1846,8 +1942,18 @@ function isCurrentlyFullscreen() {
 }
 
 function updateFullscreenUIState(isFs) {
+  const actionBar = document.getElementById("fullscreen-action-bar");
   const btnExit = document.getElementById("btn-fullscreen-exit");
   const btnFloating = document.getElementById("btn-fullscreen-floating");
+
+  if (actionBar) {
+    if (isFs) {
+      actionBar.classList.remove("hidden");
+    } else {
+      actionBar.classList.add("hidden");
+    }
+  }
+
   if (btnExit) {
     if (isFs) {
       btnExit.classList.remove("hidden");
@@ -1861,6 +1967,12 @@ function updateFullscreenUIState(isFs) {
     } else {
       btnFloating.classList.remove("hidden");
     }
+  }
+
+  if (!isFs) {
+    toggleFullscreenChat(false);
+    unreadFsMessages = 0;
+    updateFsChatBadge();
   }
 
   if (roomElements.btnFullscreen) {
@@ -2075,6 +2187,52 @@ if (btnFsExitFloating) {
   });
 }
 
+const btnFsChatToggle = document.getElementById("btn-fullscreen-chat-toggle");
+if (btnFsChatToggle) {
+  btnFsChatToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleFullscreenChat();
+  });
+}
+
+const btnFsChatClose = document.getElementById("btn-fs-chat-close");
+if (btnFsChatClose) {
+  btnFsChatClose.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleFullscreenChat(false);
+  });
+}
+
+const btnFsChatOpacity = document.getElementById("btn-fs-chat-opacity");
+if (btnFsChatOpacity) {
+  btnFsChatOpacity.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleFsChatOpacity();
+  });
+}
+
+const btnFsFitToggle = document.getElementById("btn-fullscreen-fit-toggle");
+if (btnFsFitToggle) {
+  btnFsFitToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleFullscreenFit();
+  });
+}
+
+const formFsChat = document.getElementById("form-fs-chat");
+const fsChatInput = document.getElementById("fs-chat-input");
+if (formFsChat) {
+  formFsChat.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = fsChatInput ? fsChatInput.value.trim() : "";
+    if (!text || !state.ws || state.ws.readyState !== WebSocket.OPEN) return;
+    state.ws.send(JSON.stringify({ type: "chat", text }));
+    if (fsChatInput) {
+      fsChatInput.value = "";
+    }
+  });
+}
+
 // Duplo clique ou duplo toque no player para alternar tela cheia (estilo YouTube/Netflix)
 if (roomElements.browserMount) {
   roomElements.browserMount.addEventListener("dblclick", (e) => {
@@ -2099,10 +2257,19 @@ if (roomElements.browserMount) {
   }, { passive: true });
 }
 
-// Fechar tela cheia com tecla ESC ou alternar com tecla F
+// Fechar tela cheia com tecla ESC ou alternar com tecla F ou chat com tecla C
 window.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && isCurrentlyFullscreen()) {
-    exitFullscreenAndUnlock();
+  if (e.key === "Escape") {
+    if (isFsChatOpen) {
+      toggleFullscreenChat(false);
+      return;
+    }
+    if (isCurrentlyFullscreen()) {
+      exitFullscreenAndUnlock();
+    }
+  }
+  if ((e.key === "c" || e.key === "C") && isCurrentlyFullscreen() && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
+    toggleFullscreenChat();
   }
   if ((e.key === "f" || e.key === "F") && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
     if (!isCurrentlyFullscreen()) {
@@ -2153,13 +2320,22 @@ roomElements.formChat.addEventListener("submit", (e) => {
 });
 
 function renderChatHistory(messages) {
-  if (!roomElements.chatMessagesBox) return;
+  if (roomElements.chatMessagesBox) {
+    roomElements.chatMessagesBox.innerHTML = `
+      <div class="chat-item system">
+        <span>Bem-vindo à sala! Envie o link ou senha para seus amigos.</span>
+      </div>
+    `;
+  }
 
-  roomElements.chatMessagesBox.innerHTML = `
-    <div class="chat-item system">
-      <span>Bem-vindo à sala! Envie o link ou senha para seus amigos.</span>
-    </div>
-  `;
+  const fsBox = roomElements.fsChatMessages || document.getElementById("fs-chat-messages");
+  if (fsBox) {
+    fsBox.innerHTML = `
+      <div class="chat-item system">
+        <span>Conversa em tela cheia ativa. Escreva abaixo sem sair do vídeo!</span>
+      </div>
+    `;
+  }
 
   if (Array.isArray(messages) && messages.length > 0) {
     messages.forEach((msg) => {
@@ -2168,13 +2344,7 @@ function renderChatHistory(messages) {
   }
 }
 
-function appendChatMessage(msg) {
-  const isMe = Boolean(
-    state.user &&
-    ((msg.userId && msg.userId === state.user.id) ||
-     (msg.user && state.user.nickname && msg.user.toLowerCase() === state.user.nickname.toLowerCase()))
-  );
-
+function buildChatBubbleRow(msg, isMe) {
   const row = document.createElement("div");
   row.className = `chat-bubble-row ${isMe ? "own" : "other"}`;
 
@@ -2201,16 +2371,51 @@ function appendChatMessage(msg) {
     `;
   }
 
-  roomElements.chatMessagesBox.appendChild(row);
-  roomElements.chatMessagesBox.scrollTop = roomElements.chatMessagesBox.scrollHeight;
+  return row;
+}
+
+function appendChatMessage(msg) {
+  const isMe = Boolean(
+    state.user &&
+    ((msg.userId && msg.userId === state.user.id) ||
+     (msg.user && state.user.nickname && msg.user.toLowerCase() === state.user.nickname.toLowerCase()))
+  );
+
+  if (roomElements.chatMessagesBox) {
+    roomElements.chatMessagesBox.appendChild(buildChatBubbleRow(msg, isMe));
+    roomElements.chatMessagesBox.scrollTop = roomElements.chatMessagesBox.scrollHeight;
+  }
+
+  const fsBox = roomElements.fsChatMessages || document.getElementById("fs-chat-messages");
+  if (fsBox) {
+    fsBox.appendChild(buildChatBubbleRow(msg, isMe));
+    fsBox.scrollTop = fsBox.scrollHeight;
+  }
+
+  if (isCurrentlyFullscreen() && !isFsChatOpen) {
+    unreadFsMessages++;
+    updateFsChatBadge();
+  }
 }
 
 function appendSystemMessage(text) {
-  const item = document.createElement("div");
-  item.className = "chat-item system";
-  item.innerHTML = `<span>${escapeHTML(text)}</span>`;
-  roomElements.chatMessagesBox.appendChild(item);
-  roomElements.chatMessagesBox.scrollTop = roomElements.chatMessagesBox.scrollHeight;
+  function makeSystemItem() {
+    const item = document.createElement("div");
+    item.className = "chat-item system";
+    item.innerHTML = `<span>${escapeHTML(text)}</span>`;
+    return item;
+  }
+
+  if (roomElements.chatMessagesBox) {
+    roomElements.chatMessagesBox.appendChild(makeSystemItem());
+    roomElements.chatMessagesBox.scrollTop = roomElements.chatMessagesBox.scrollHeight;
+  }
+
+  const fsBox = roomElements.fsChatMessages || document.getElementById("fs-chat-messages");
+  if (fsBox) {
+    fsBox.appendChild(makeSystemItem());
+    fsBox.scrollTop = fsBox.scrollHeight;
+  }
 }
 
 function escapeHTML(str) {

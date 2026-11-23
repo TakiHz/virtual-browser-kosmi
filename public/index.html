@@ -208,9 +208,10 @@
         </div>
       </div>
 
-      <!-- BOTÃO FLUTUANTE PARA ENTRAR EM TELA CHEIA DIRETO NO VÍDEO -->
-      <button id="btn-fullscreen-floating" class="btn-fullscreen-floating" type="button" title="Assistir em Tela Cheia (⛶)">
-        ⛶ Tela Cheia
+      <!-- BOTÃO FLUTUANTE PARA ENTRAR EM TELA CHEIA / ESTENDER TELA DIRETO NO VÍDEO -->
+      <button id="btn-fullscreen-floating" class="btn-fullscreen-floating" type="button" title="Estender vídeo para Tela Cheia (⛶)">
+        <span class="fs-icon">⛶</span>
+        <span class="fs-text">Estender Tela</span>
       </button>
 
       <!-- BOTÃO FLUTUANTE PARA REEXIBIR CONTROLES QUANDO OCULTADOS PELA SETA -->
@@ -218,10 +219,56 @@
         ▲ Controles
       </button>
 
-      <!-- BOTÃO FLUTUANTE PARA SAIR DA TELA CHEIA (TOUCH & DESKTOP) -->
-      <button id="btn-fullscreen-exit" class="btn-fullscreen-exit hidden" type="button" title="Sair da tela cheia">
-        ✕ Sair da Tela Cheia
-      </button>
+      <!-- BARRA DE AÇÕES FLUTUANTES EM TELA CHEIA (PC & CELULAR) -->
+      <div id="fullscreen-action-bar" class="fullscreen-action-bar hidden">
+        <button id="btn-fullscreen-chat-toggle" class="btn-fs-pill" type="button" title="Abrir ou ocultar chat translúcido">
+          <span class="fs-pill-icon">💬</span>
+          <span class="fs-pill-text">Chat</span>
+          <span id="fs-chat-badge" class="fs-chat-badge hidden">0</span>
+        </button>
+        <button id="btn-fullscreen-fit-toggle" class="btn-fs-pill" type="button" title="Alternar Ajuste da Tela (Conter / Preencher)">
+          <span class="fs-pill-icon" id="fs-fit-icon">↔️</span>
+          <span class="fs-pill-text" id="fs-fit-text">Ajustar</span>
+        </button>
+        <button id="btn-fullscreen-exit" class="btn-fs-pill btn-fs-exit" type="button" title="Sair da tela cheia (ESC)">
+          <span class="fs-pill-icon">✕</span>
+          <span class="fs-pill-text">Sair</span>
+        </button>
+      </div>
+
+      <!-- OVERLAY DE CHAT TRANSLÚCIDO EM TELA CHEIA (SEM ATRAPALHAR O VÍDEO) -->
+      <div id="fullscreen-chat-overlay" class="fullscreen-chat-overlay hidden">
+        <div class="fs-chat-header">
+          <div class="fs-chat-title">
+            <span class="fs-chat-icon">💬</span>
+            <span class="fs-chat-heading">Chat da Sala</span>
+            <span class="fs-chat-live-indicator">
+              <span class="fs-chat-live-dot"></span> Ao vivo
+            </span>
+          </div>
+          <div class="fs-chat-header-actions">
+            <button type="button" id="btn-fs-chat-opacity" class="btn-fs-header-icon" title="Alternar nível de transparência do chat">
+              👁️
+            </button>
+            <button type="button" id="btn-fs-chat-close" class="btn-fs-header-icon" title="Ocultar chat (✕)">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div id="fs-chat-messages" class="fs-chat-messages">
+          <div class="chat-item system">
+            <span>Conversa em tela cheia ativa. Escreva abaixo sem sair do vídeo!</span>
+          </div>
+        </div>
+
+        <form id="form-fs-chat" class="fs-chat-form">
+          <input type="text" id="fs-chat-input" class="fs-chat-input" placeholder="Mensagem em tela cheia..." autocomplete="off" />
+          <button type="submit" class="btn-fs-chat-send" title="Enviar mensagem">
+            <span>Enviar</span> ↵
+          </button>
+        </form>
+      </div>
 
       <!-- BARRA FLUTUANTE DE DIGITAÇÃO MOBILE / PROXY DE TECLADO -->
       <div id="mobile-typing-bar" class="mobile-typing-bar hidden">
