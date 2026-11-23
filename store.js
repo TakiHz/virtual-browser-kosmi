@@ -326,6 +326,8 @@ export async function createRoomStore(code, data) {
     controllerName: null,
     clients: new Set(),
     chatHistory: [],
+    region: data.region || "AUTO",
+    startUrl: data.startUrl || "https://vizer.bio/",
   };
 
   localRooms.set(codeUpper, room);

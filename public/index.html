@@ -133,6 +133,26 @@
               </div>
             </div>
 
+            <!-- SELEÇÃO DE REGIÃO DO SERVIDOR -->
+            <div class="field-group">
+              <div class="field-label-row">
+                <label for="create-room-region">Servidor do Navegador (IP)</label>
+                <span class="field-hint">Menor tráfego & sem bloqueio</span>
+              </div>
+              <div class="region-choice-chips">
+                <button type="button" class="choice-chip-region active" data-region="AUTO" title="Automático: cluster com menor tráfego e menor latência">
+                  ⚡ Auto (Menos Tráfego)
+                </button>
+                <button type="button" class="choice-chip-region" data-region="NA" title="Estados Unidos: Sem bloqueios e alta capacidade">
+                  🇺🇸 EUA (Cluster NA)
+                </button>
+                <button type="button" class="choice-chip-region" data-region="EU" title="Europa: IP Europeu nativo">
+                  🇪🇺 Europa (Cluster EU)
+                </button>
+              </div>
+              <input type="hidden" id="create-room-region" value="AUTO" />
+            </div>
+
             <!-- AVISO DE LIMITE DE 1 SALA POR CONTA -->
             <div id="own-room-notice" class="own-room-notice hidden">
               <div class="own-notice-top">
@@ -332,8 +352,10 @@
 
         <!-- BARRA DE NAVEGAÇÃO / TROCA DE VÍDEO HLS OU SITE -->
         <form id="form-room-nav" class="room-nav-center">
-          <input type="text" id="input-room-nav-url" placeholder="Navegar para site ou stream .m3u8..." autocomplete="off" />
-          <button type="submit" class="btn-nav-go">Ir</button>
+          <div class="room-nav-input-row">
+            <input type="text" id="input-room-nav-url" placeholder="Navegar para site ou stream .m3u8..." autocomplete="off" />
+            <button type="submit" class="btn-nav-go">Ir</button>
+          </div>
           <div class="room-nav-quick-group">
             <button type="button" class="btn-room-nav-quick" id="btn-room-nav-vizer" data-url="https://vizer.bio/" title="Navegar para Vizer (Filmes e Séries)">
               🎬 Vizer
@@ -341,6 +363,9 @@
             <button type="button" class="btn-room-nav-quick" id="btn-room-nav-youtube" data-url="https://www.youtube.com?gl=BR&hl=pt" title="Navegar para o YouTube (Brasil)">
               ▶️ YouTube
             </button>
+            <span class="room-nav-region-badge" id="room-nav-region-badge" title="Região e IP do navegador virtual">
+              ⚡ Nuvem Direta
+            </span>
           </div>
         </form>
       </header>

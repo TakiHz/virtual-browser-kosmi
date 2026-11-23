@@ -937,13 +937,16 @@ lobbyElements.formCreate.addEventListener("submit", async (e) => {
     lobbyElements.btnCreateRoom.disabled = true;
     lobbyElements.btnCreateText.textContent = "Iniciando Máquina Virtual...";
 
+    const hiddenRegionInput = document.getElementById("create-room-region");
+    const region = hiddenRegionInput ? hiddenRegionInput.value : "AUTO";
+
     const res = await fetch("/api/rooms", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${state.token}`,
       },
-      body: JSON.stringify({ startUrl }),
+      body: JSON.stringify({ startUrl, region }),
     });
 
     const data = await res.json();
@@ -1046,6 +1049,35 @@ if (lobbyElements.chipUrlVizer) {
   });
 }
 
+// Alternador de Região do Servidor Hyperbeam
+const regionChips = document.querySelectorAll(".choice-chip-region");
+const hiddenRegionInput = document.getElementById("create-room-region");
+regionChips.forEach((chip) => {
+  chip.addEventListener("click", () => {
+    regionChips.forEach((c) => c.classList.remove("active"));
+    chip.classList.add("active");
+    if (hiddenRegionInput) {
+      hiddenRegionInput.value = chip.getAttribute("data-region") || "AUTO";
+    }
+  });
+});
+
+function updateRoomRegionBadge(region) {
+  const badge = document.getElementById("room-nav-region-badge");
+  if (!badge) return;
+  const r = (region || "").toUpperCase();
+  if (r === "NA") {
+    badge.innerHTML = "🇺🇸 EUA (Cluster NA)";
+    badge.title = "Servidor nos Estados Unidos (AWS) - Alta capacidade & sem bloqueios";
+  } else if (r === "EU") {
+    badge.innerHTML = "🇪🇺 Europa (Cluster EU)";
+    badge.title = "Servidor na Europa (Frankfurt/Amsterdã) - IP Europeu";
+  } else {
+    badge.innerHTML = "⚡ Auto (Menos Tráfego)";
+    badge.title = "Cluster dinâmico com menor tráfego e latência rápida";
+  }
+}
+
 // Auto-extração caso o usuário cole o link completo no input de código
 lobbyElements.joinRoomCode.addEventListener("input", (e) => {
   const val = e.target.value;
@@ -1095,6 +1127,9 @@ async function joinRoom(rawCode) {
     if (!res.ok) throw new Error(room.error || "Sala não encontrada ou encerrada.");
 
     state.currentRoom = room;
+    if (room.region) {
+      updateRoomRegionBadge(room.region);
+    }
 
     // Se o usuário atual for o criador da sala, exibe o botão de apagar sala
     const isOwner =
@@ -1590,6 +1625,10 @@ function connectRoomWebSocket(code) {
 
 function updateRoomState(data) {
   const { currentController, controllerName, onlineUsers } = data;
+
+  if (data.region) {
+    updateRoomRegionBadge(data.region);
+  }
 
   // Atualizar contador online
   const count = onlineUsers.length;
