@@ -227,36 +227,45 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
   // Configuração de Região e Cluster Hyperbeam:
   // Modo Padrão: Conexão Direta nos Servidores Nativos do Hyperbeam (AWS / UpCloud)
   // - 100% Grátis, SEM LIMITE de internet (unmetered gigabit 1 Gbps - 10 Gbps), latência ultra-baixa (5-15ms)
-  // - Cluster "NA" (North America) para menor ping para a América do Sul ou "EU" (Europa) para menor tráfego
-  const hyperbeamRegion = requestedRegion || process.env.HYPERBEAM_REGION || "NA";
+  // - Cluster "EU" (Europa: Frankfurt, Amsterdã, Londres) para IP Europeu nativo
+  const hyperbeamRegion = requestedRegion || process.env.HYPERBEAM_REGION || "EU";
 
   const proxyConfig = (
     process.env.PROXY_URL ||
+    process.env.EU_PROXY ||
     process.env.US_PROXY ||
     process.env.MEXICO_PROXY ||
     process.env.BRAZIL_PROXY ||
     ""
   ).trim();
 
-  const isMexico = !!(
+  const isEurope = !!(
+    (requestedRegion && requestedRegion.toUpperCase() === "EU") ||
+    hyperbeamRegion === "EU" ||
+    process.env.REGION === "EU"
+  );
+
+  const isMexico = !isEurope && !!(
     process.env.REGION === "MX" ||
     (proxyConfig && (proxyConfig.includes("190.9.48.193") || proxyConfig.toLowerCase().includes("mexico")))
   );
 
-  const isBrazil = !!(
+  const isBrazil = !isEurope && !!(
     process.env.REGION === "BR" ||
     process.env.BRAZIL_PROXY ||
     (proxyConfig && (proxyConfig.includes("201.28.86.18") || proxyConfig.toLowerCase().includes("brazil")))
   );
 
-  const defaultCountry = isMexico ? "MX" : (isBrazil ? "BR" : (process.env.COUNTRY || "US"));
-  const defaultLanguage = isMexico
+  const defaultCountry = isEurope ? (process.env.COUNTRY || "PT") : (isMexico ? "MX" : (isBrazil ? "BR" : (process.env.COUNTRY || "US")));
+  const defaultLanguage = isEurope
+    ? "pt-PT,pt;q=0.9,pt-BR;q=0.8,en;q=0.7"
+    : isMexico
     ? "es-MX,es;q=0.9,pt-BR;q=0.8,pt;q=0.7,en-US;q=0.6,en;q=0.5"
     : "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7";
 
   const vmPayload = {
     start_url: startUrl,
-    region: hyperbeamRegion, // Cluster oficial Hyperbeam ("NA" ou "EU")
+    region: hyperbeamRegion, // Cluster oficial Hyperbeam ("EU" ou "NA")
     kiosk: false,
     ublock: true, // Bloqueio nativo de anúncios, pop-ups invasivos e scripts maliciosos (uBlock Origin)
     webgl: true, // Aceleração gráfica para decodificação de vídeo fluida
@@ -265,7 +274,7 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
     height: 720,
     locale: {
       language: defaultLanguage,
-      country: defaultCountry, // Nativo oficial dos EUA com idioma pt-BR
+      country: defaultCountry, // Nativo oficial europeu com idioma português
     },
     timeout: {
       offline: 300, // Desliga 5 minutos após o último sair para economizar recursos
@@ -350,7 +359,7 @@ async function requestHyperbeamVM(startUrl = "https://pobreeflix.com/", retries 
       console.warn(`[Proxy]: Falha ao processar proxy: ${proxyParseErr.message}`);
     }
   } else {
-    console.log(`[Hyperbeam Conexão Direta]: Rodando com IP Oficial dos Estados Unidos (AWS/UpCloud) - 1 Gbps sem limite de dados`);
+    console.log(`[Hyperbeam Conexão Direta]: Rodando com IP Oficial ${hyperbeamRegion === "EU" ? "Europeu (Frankfurt/Amsterdã - Cluster EU)" : "dos Estados Unidos (AWS/UpCloud - Cluster NA)"} - 1 Gbps sem limite de dados`);
   }
 
   for (let attempt = 1; attempt <= retries; attempt++) {
