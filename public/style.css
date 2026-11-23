@@ -1964,6 +1964,12 @@ body {
 }
 
 /* ESTILOS DE TELA CHEIA (NATIVO & EMULADO PARA IPHONE / SAFARI / IOS) */
+:fullscreen .room-side-panel,
+:-webkit-full-screen .room-side-panel,
+body.fullscreen-active .room-side-panel {
+  display: none !important;
+}
+
 :fullscreen .browser-wrapper,
 :-webkit-full-screen .browser-wrapper,
 .browser-wrapper:fullscreen,

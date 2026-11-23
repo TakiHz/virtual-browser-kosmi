@@ -1303,12 +1303,12 @@ async function mountHyperbeam(embedUrl) {
     // Ativa suporte touch para celular com alinhamento pixel-perfect
     setupMobileTouchAndGestures();
 
-    // Aplica zoom padrão de 125% no navegador virtual conforme solicitado
+    // Aplica zoom padrão de 110% no navegador virtual conforme solicitado
     setTimeout(() => {
-      applyVirtualBrowserZoom(1.25);
+      applyVirtualBrowserZoom(1.10);
     }, 1200);
     setTimeout(() => {
-      applyVirtualBrowserZoom(1.25);
+      applyVirtualBrowserZoom(1.10);
     }, 3000);
 
     showToast("Navegador virtual carregado com sucesso!", "success");
@@ -1319,9 +1319,9 @@ async function mountHyperbeam(embedUrl) {
 }
 
 // ====================================================
-// ZOOM DO NAVEGADOR VIRTUAL (125%)
+// ZOOM DO NAVEGADOR VIRTUAL (110%)
 // ====================================================
-async function applyVirtualBrowserZoom(factor = 1.25) {
+async function applyVirtualBrowserZoom(factor = 1.10) {
   if (!state.hbInstance || !state.hbInstance.tabs) return;
   try {
     const tabs = await state.hbInstance.tabs.query({});
@@ -1351,7 +1351,7 @@ function setupAntiPopupGuard(hb) {
       if (tab && tab.id) {
         setTimeout(() => {
           try {
-            hb.tabs.setZoom(tab.id, 1.25);
+            hb.tabs.setZoom(tab.id, 1.10);
           } catch (_) {}
         }, 800);
       }
@@ -1381,7 +1381,7 @@ function setupAntiPopupGuard(hb) {
       hb.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
         if (changeInfo.status === "complete") {
           try {
-            await hb.tabs.setZoom(tabId, 1.25);
+            await hb.tabs.setZoom(tabId, 1.10);
           } catch (_) {}
         }
       });
@@ -1978,7 +1978,7 @@ async function navigateHyperbeamToUrl(rawUrl) {
         await state.hbInstance.tabs.update(tabs[0].id, { url });
         showToast("Carregando no navegador virtual...", "success");
         setTimeout(() => {
-          applyVirtualBrowserZoom(1.25);
+          applyVirtualBrowserZoom(1.10);
         }, 1500);
         if (roomElements.inputNavUrl) roomElements.inputNavUrl.value = "";
       }
@@ -2288,7 +2288,9 @@ function unlockOrientationSafely() {
 }
 
 async function enterFullscreenWithLandscape() {
+  const room = document.getElementById("view-room");
   const wrapper =
+    room ||
     document.getElementById("browser-wrapper") ||
     document.querySelector(".browser-wrapper") ||
     document.documentElement;
@@ -2325,15 +2327,21 @@ async function enterFullscreenWithLandscape() {
   // 3. Aciona o travamento horizontal se suportado
   await lockLandscapeOrientationSafely();
 
-  // 4. Trava a VM remota estritamente em 16:9 widescreen HD (1280x720)
-  // Revertido o modo de tela vertical para celular, evitando barras pretas no PC
+  // 4. Garante proporção HD 16:9 apenas se a resolução não for 1280x720 (evita que o player saia de tela cheia por resize)
   if (state.hbInstance && typeof state.hbInstance.resize === "function") {
-    try {
-      state.hbInstance.resize(1280, 720);
-    } catch (_) {}
+    if (state.hbInstance.width !== 1280 || state.hbInstance.height !== 720) {
+      try {
+        state.hbInstance.resize(1280, 720);
+      } catch (_) {}
+    }
   }
 
-  // 5. Se for dispositivo móvel em pé, avisa que pode virar para horizontal
+  // 5. Aciona tela cheia sincronizada no player do navegador virtual (F11 e f)
+  setTimeout(() => {
+    triggerVirtualBrowserFullscreen();
+  }, 250);
+
+  // 6. Se for dispositivo móvel em pé, avisa que pode virar para horizontal
   if (
     window.innerWidth < window.innerHeight &&
     (window.innerWidth <= 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
@@ -2367,11 +2375,23 @@ async function exitFullscreenAndUnlock() {
     console.warn("Erro ao sair de tela cheia:", err.message);
   }
 
-  // 3. Restaura resolução padrão da VM Hyperbeam
-  if (state.hbInstance && typeof state.hbInstance.resize === "function") {
+  // 3. Envia Escape e F11 para restaurar modo normal no player do navegador virtual
+  if (state.hbInstance) {
     try {
-      state.hbInstance.resize(1280, 720);
+      state.hbInstance.sendEvent({ type: "keydown", key: "Escape" });
+      setTimeout(() => {
+        if (state.hbInstance) state.hbInstance.sendEvent({ type: "keyup", key: "Escape" });
+      }, 50);
     } catch (_) {}
+  }
+
+  // 4. Restaura resolução padrão da VM Hyperbeam apenas se for diferente
+  if (state.hbInstance && typeof state.hbInstance.resize === "function") {
+    if (state.hbInstance.width !== 1280 || state.hbInstance.height !== 720) {
+      try {
+        state.hbInstance.resize(1280, 720);
+      } catch (_) {}
+    }
   }
 
   updateFullscreenUIState(false);
@@ -2384,12 +2404,14 @@ function handleFullscreenChange() {
   updateFullscreenUIState(isFs);
 
   // Mantém SEMPRE a VM Hyperbeam na proporção 16:9 (1280x720) compartilhada
-  // evitando que celulares redimensionem o navegador dos PCs na mesma sala
+  // apenas disparando resize se as dimensões forem divergentes
   if (state.hbInstance && typeof state.hbInstance.resize === "function") {
-    try {
-      state.hbInstance.resize(1280, 720);
-    } catch (err) {
-      console.warn("[Hyperbeam resize error]:", err.message);
+    if (state.hbInstance.width !== 1280 || state.hbInstance.height !== 720) {
+      try {
+        state.hbInstance.resize(1280, 720);
+      } catch (err) {
+        console.warn("[Hyperbeam resize error]:", err.message);
+      }
     }
   }
 
