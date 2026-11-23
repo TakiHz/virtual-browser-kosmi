@@ -1685,16 +1685,16 @@ body {
   display: none !important;
 }
 
-/* OVERLAY DE CHAT EM TELA CHEIA (LARGURA REDUZIDA PELA METADE & OPACIDADE ALTA) */
+/* OVERLAY DE CHAT EM TELA CHEIA (+20% DE LARGURA: 264PX & OPACIDADE ALTA) */
 .fullscreen-chat-overlay {
   position: absolute;
   right: 20px;
   bottom: 24px;
   right: max(20px, env(safe-area-inset-right, 20px));
   bottom: max(24px, env(safe-area-inset-bottom, 24px));
-  width: 220px;
+  width: 264px;
   max-width: calc(100vw - 40px);
-  height: 420px;
+  height: 430px;
   max-height: calc(100vh - 80px);
   max-height: calc(100dvh - 80px);
   background: rgba(10, 14, 18, 0.88);
@@ -1911,16 +1911,16 @@ body {
   transform: scale(1.03);
 }
 
-/* Responsividade do Chat em Tela Cheia no Celular (Largura reduzida pela metade & Opacidade alta) */
+/* Responsividade do Chat em Tela Cheia no Celular (+20% de largura & Opacidade alta) */
 @media (max-width: 768px) {
   .fullscreen-chat-overlay {
     right: 10px !important;
     left: auto !important;
     bottom: 10px !important;
     bottom: max(10px, env(safe-area-inset-bottom, 10px)) !important;
-    width: 50vw !important;
-    min-width: 175px !important;
-    max-width: 220px !important;
+    width: 60vw !important;
+    min-width: 210px !important;
+    max-width: 265px !important;
     height: auto !important;
     max-height: 52vh !important;
     max-height: 52dvh !important;
@@ -1946,8 +1946,8 @@ body {
 
 @media (max-height: 520px) and (orientation: landscape) {
   .fullscreen-chat-overlay {
-    width: 190px !important;
-    max-width: 36vw !important;
+    width: 228px !important;
+    max-width: 44vw !important;
     left: auto !important;
     right: 10px !important;
     bottom: 10px !important;
