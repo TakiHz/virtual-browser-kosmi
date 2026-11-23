@@ -2708,9 +2708,10 @@ body.fullscreen-active {
 }
 
 #volume-slider {
-  width: 48px;
-  height: 3px;
-  accent-color: var(--accent-text);
+  width: 68px;
+  max-width: 68px;
+  height: 4px;
+  accent-color: #22c55e;
   cursor: pointer;
 }
 
