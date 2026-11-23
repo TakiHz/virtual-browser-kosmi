@@ -1845,17 +1845,27 @@ function updateRoomState(data) {
   }
 
   if (isMeControlling) {
-    roomElements.controlStatusBadge.className = "control-status controlling";
-    roomElements.controlStatusText.textContent = "🎮 No controle";
-    roomElements.btnToggleControl.textContent = "Liberar";
-    roomElements.btnToggleControl.className = "btn-dock btn-dock-slim active-control";
+    if (roomElements.controlStatusBadge) roomElements.controlStatusBadge.className = "control-status controlling";
+    if (roomElements.controlStatusText) roomElements.controlStatusText.textContent = "🎮 No controle";
+    if (roomElements.btnToggleControl) {
+      roomElements.btnToggleControl.textContent = "🎮 No Controle";
+      roomElements.btnToggleControl.className = "btn-dock btn-dock-slim control-active";
+      roomElements.btnToggleControl.title = "Você está no controle! Clique para liberar.";
+    }
   } else {
-    roomElements.controlStatusBadge.className = "control-status";
-    roomElements.controlStatusText.textContent = controllerName
-      ? `👀 ${controllerName}`
-      : "👀 Livre";
-    roomElements.btnToggleControl.textContent = "🎮 Controle";
-    roomElements.btnToggleControl.className = "btn-dock btn-dock-slim";
+    if (roomElements.controlStatusBadge) roomElements.controlStatusBadge.className = "control-status";
+    if (roomElements.controlStatusText) {
+      roomElements.controlStatusText.textContent = controllerName
+        ? `👀 ${controllerName}`
+        : "👀 Livre";
+    }
+    if (roomElements.btnToggleControl) {
+      roomElements.btnToggleControl.textContent = controllerName ? `👀 ${controllerName}` : "🎮 Controle";
+      roomElements.btnToggleControl.className = "btn-dock btn-dock-slim control-inactive";
+      roomElements.btnToggleControl.title = controllerName
+        ? `${controllerName} está controlando. Clique para assumir.`
+        : "Clique para assumir o controle do navegador virtual.";
+    }
   }
 }
 

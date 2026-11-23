@@ -2480,20 +2480,26 @@ body.fullscreen-active {
 }
 
 .room-dock.slim {
-  padding: 5px 8px;
-  gap: 5px;
+  padding: 6px 10px;
+  gap: 8px;
+  display: flex;
+  align-items: center;
 }
 
 .volume-control {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   flex-shrink: 0;
+  padding: 2px 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-pill);
 }
 
 .volume-control input[type="range"] {
-  width: 55px;
-  max-width: 55px;
+  width: 68px;
+  max-width: 68px;
   accent-color: #22c55e;
   cursor: pointer;
 }
@@ -2504,7 +2510,7 @@ body.fullscreen-active {
   color: #86efac;
   background: rgba(34, 197, 94, 0.18);
   border: 1px solid rgba(74, 222, 128, 0.4);
-  padding: 1px 4px;
+  padding: 1px 5px;
   border-radius: 4px;
   text-transform: uppercase;
   white-space: nowrap;
@@ -2520,18 +2526,52 @@ body.fullscreen-active {
   box-shadow: 0 0 8px rgba(250, 204, 21, 0.35);
 }
 
-.btn-virtual-fs {
-  background: rgba(56, 189, 248, 0.14) !important;
-  border: 1px solid rgba(56, 189, 248, 0.4) !important;
-  color: #7dd3fc !important;
+/* Botão de Controle Integrado (Verde = No Controle, Vermelho = Fora do Controle) */
+#btn-toggle-control {
   border-radius: var(--radius-pill);
-  transition: var(--transition);
+  font-family: var(--font-main);
+  font-size: 0.73rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.btn-virtual-fs:hover {
-  background: rgba(56, 189, 248, 0.28) !important;
-  border-color: #38bdf8 !important;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.45) !important;
+/* Quando NÃO está no controle (Bordas vermelhas) */
+#btn-toggle-control.control-inactive,
+#btn-toggle-control:not(.control-active) {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(248, 113, 113, 0.6) !important;
+  color: #fca5a5 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.22) !important;
+}
+
+#btn-toggle-control.control-inactive:hover,
+#btn-toggle-control:not(.control-active):hover {
+  background: rgba(239, 68, 68, 0.22) !important;
+  border-color: #ef4444 !important;
+  color: #fff !important;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.38) !important;
+}
+
+/* Quando ESTÁ no controle (Bordas verdes brilhantes) */
+#btn-toggle-control.control-active {
+  background: rgba(34, 197, 94, 0.18) !important;
+  border: 1px solid rgba(74, 222, 128, 0.68) !important;
+  color: #86efac !important;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.38) !important;
+  font-weight: 700 !important;
+}
+
+#btn-toggle-control.control-active:hover {
+  background: rgba(34, 197, 94, 0.3) !important;
+  border-color: #86efac !important;
+  color: #fff !important;
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.6) !important;
 }
 
 #btn-fullscreen {
@@ -3214,8 +3254,8 @@ body.fullscreen-active {
   }
 
   .volume-control input[type="range"] {
-    width: 46px !important;
-    max-width: 46px !important;
+    width: 56px !important;
+    max-width: 56px !important;
     accent-color: #22c55e !important;
   }
 
