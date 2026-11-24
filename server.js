@@ -206,7 +206,7 @@ function generateRoomCode() {
   return code;
 }
 
-async function requestHyperbeamVM(startUrl = "https://vizer.bio/", retries = 2, requestedRegion = null) {
+async function requestHyperbeamVM(startUrl = "https://redecanaishd.cam/", retries = 2, requestedRegion = null) {
   if (!HYPERBEAM_API_KEY) {
     throw new Error(
       "A chave HYPERBEAM_API_KEY não foi configurada no servidor. Obtenha uma chave em https://hyperbeam.com e adicione nas variáveis de ambiente."
@@ -381,7 +381,7 @@ async function requestHyperbeamVM(startUrl = "https://vizer.bio/", retries = 2, 
 app.post("/api/rooms", authMiddleware, async (req, res) => {
   try {
     let { startUrl, region } = req.body || {};
-    startUrl = startUrl?.trim() || "https://vizer.bio/";
+    startUrl = startUrl?.trim() || "https://redecanaishd.cam/";
 
     // REGRA: Limite estrito de apenas 1 sala ativa por conta
     const existingRoom = await getRoomByHostNickname(req.user.nickname);

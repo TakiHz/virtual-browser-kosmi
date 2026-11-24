@@ -113,20 +113,24 @@
             <div class="field-group">
               <div class="field-label-row">
                 <label for="create-start-url">URL Inicial (Site ou Streaming)</label>
-                <span class="field-hint">Vizer ou YouTube</span>
+                <span class="field-hint">RedeCanais, Vizer ou YouTube</span>
               </div>
               <div class="url-input-container">
-                <input type="text" id="create-start-url" value="https://vizer.bio/" placeholder="Cole link do Vizer, YouTube ou .m3u8..." />
-                <button type="button" class="btn-url-quick-alt" id="btn-toggle-quick-alt" title="Alternar para YouTube (alternativa ao Vizer)">
-                  ▶️ YouTube
+                <input type="text" id="create-start-url" value="https://redecanaishd.cam/" placeholder="Cole link do RedeCanais, Vizer, YouTube ou .m3u8..." />
+                <button type="button" class="btn-url-quick-alt" id="btn-toggle-quick-alt" title="Alternar entre sites recomendados">
+                  🎬 Vizer
                 </button>
               </div>
               <div class="url-choice-chips">
-                <button type="button" class="choice-chip active" id="chip-url-vizer" data-url="https://vizer.bio/" title="Usar Vizer como primeira opção">
+                <button type="button" class="choice-chip active" id="chip-url-redecanais" data-url="https://redecanaishd.cam/" title="Usar RedeCanais como opção principal (Filmes, Séries e TV)">
+                  <span class="chip-icon">📺</span>
+                  <span class="chip-text">RedeCanais</span>
+                </button>
+                <button type="button" class="choice-chip" id="chip-url-vizer" data-url="https://vizer.bio/" title="Usar Vizer como opção secundária (Filmes e Séries)">
                   <span class="chip-icon">🎬</span>
                   <span class="chip-text">Vizer</span>
                 </button>
-                <button type="button" class="choice-chip" id="chip-url-youtube" data-url="https://www.youtube.com?gl=BR&hl=pt" title="Usar YouTube (Brasil)">
+                <button type="button" class="choice-chip" id="chip-url-youtube" data-url="https://www.youtube.com?gl=BR&hl=pt" title="Usar YouTube (Vídeos e Músicas)">
                   <span class="chip-icon">▶️</span>
                   <span class="chip-text">YouTube</span>
                 </button>
@@ -408,10 +412,13 @@
             <button type="submit" class="btn-nav-go">Ir</button>
           </div>
           <div class="room-nav-quick-group">
-            <button type="button" class="btn-room-nav-quick" id="btn-room-nav-vizer" data-url="https://vizer.bio/" title="Navegar para Vizer (Filmes e Séries)">
+            <button type="button" class="btn-room-nav-quick primary-quick" id="btn-room-nav-redecanais" data-url="https://redecanaishd.cam/" title="Navegar para RedeCanais (Principal: Filmes, Séries e TV)">
+              📺 RedeCanais
+            </button>
+            <button type="button" class="btn-room-nav-quick" id="btn-room-nav-vizer" data-url="https://vizer.bio/" title="Navegar para Vizer (Secundário: Filmes e Séries)">
               🎬 Vizer
             </button>
-            <button type="button" class="btn-room-nav-quick" id="btn-room-nav-youtube" data-url="https://www.youtube.com?gl=BR&hl=pt" title="Navegar para o YouTube (Brasil)">
+            <button type="button" class="btn-room-nav-quick" id="btn-room-nav-youtube" data-url="https://www.youtube.com?gl=BR&hl=pt" title="Navegar para o YouTube (Terceiro: Vídeos e Músicas)">
               ▶️ YouTube
             </button>
             <span class="room-nav-region-badge" id="room-nav-region-badge" title="Região e IP do navegador virtual">

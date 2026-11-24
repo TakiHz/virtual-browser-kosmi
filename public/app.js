@@ -40,8 +40,9 @@ const lobbyElements = {
   formCreate: document.getElementById("form-create-room"),
   createStartUrl: document.getElementById("create-start-url"),
   btnToggleQuickAlt: document.getElementById("btn-toggle-quick-alt"),
-  chipUrlYoutube: document.getElementById("chip-url-youtube"),
+  chipUrlRedecanais: document.getElementById("chip-url-redecanais"),
   chipUrlVizer: document.getElementById("chip-url-vizer"),
+  chipUrlYoutube: document.getElementById("chip-url-youtube"),
   btnCreateRoom: document.getElementById("btn-create-room"),
   btnCreateText: document.getElementById("btn-create-text"),
   formJoin: document.getElementById("form-join-room"),
@@ -144,8 +145,9 @@ const roomElements = {
   usersListBox: document.getElementById("users-list-box"),
   formNav: document.getElementById("form-room-nav"),
   inputNavUrl: document.getElementById("input-room-nav-url"),
-  btnRoomNavYoutube: document.getElementById("btn-room-nav-youtube"),
+  btnRoomNavRedecanais: document.getElementById("btn-room-nav-redecanais"),
   btnRoomNavVizer: document.getElementById("btn-room-nav-vizer"),
+  btnRoomNavYoutube: document.getElementById("btn-room-nav-youtube"),
   btnCollapseDock: document.getElementById("btn-collapse-dock"),
   btnToggleDockVisibility: document.getElementById("btn-toggle-dock-visibility"),
   dockToggleIcon: document.getElementById("dock-toggle-icon"),
@@ -940,9 +942,10 @@ lobbyElements.btnLogout.addEventListener("click", async () => {
 });
 
 // ====================================================
-// ATALHOS & ALTERNATIVAS DE STREAMING (VIZER & YOUTUBE)
+// ATALHOS & ALTERNATIVAS DE STREAMING (REDECANAIS, VIZER & YOUTUBE)
 // ====================================================
 const PRESET_URLS = {
+  REDECANAIS: "https://redecanaishd.cam/",
   VIZER: "https://vizer.bio/",
   YOUTUBE: "https://www.youtube.com?gl=BR&hl=pt",
 };
@@ -954,7 +957,7 @@ const PRESET_URLS = {
 // Criar Nova Sala
 lobbyElements.formCreate.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const startUrl = lobbyElements.createStartUrl.value.trim() || PRESET_URLS.VIZER;
+  const startUrl = lobbyElements.createStartUrl.value.trim() || PRESET_URLS.REDECANAIS;
 
   try {
     lobbyElements.btnCreateRoom.disabled = true;
@@ -1015,9 +1018,13 @@ lobbyElements.formCreate.addEventListener("submit", async (e) => {
 
 function syncUrlPresets(currentUrl) {
   const norm = (currentUrl || "").trim().toLowerCase();
+  const isRedecanais = norm.includes("redecanais");
   const isVizer = norm.includes("vizer");
   const isYt = norm.includes("youtube.com") || norm.includes("youtu.be");
 
+  if (lobbyElements.chipUrlRedecanais) {
+    lobbyElements.chipUrlRedecanais.classList.toggle("active", isRedecanais);
+  }
   if (lobbyElements.chipUrlVizer) {
     lobbyElements.chipUrlVizer.classList.toggle("active", isVizer);
   }
@@ -1027,12 +1034,15 @@ function syncUrlPresets(currentUrl) {
 
   // O botão do lado funciona como alternador direto
   if (lobbyElements.btnToggleQuickAlt) {
-    if (isVizer) {
-      lobbyElements.btnToggleQuickAlt.innerHTML = "▶️ YouTube";
-      lobbyElements.btnToggleQuickAlt.title = "Alternar para YouTube (alternativa ao Vizer)";
-    } else {
+    if (isRedecanais) {
       lobbyElements.btnToggleQuickAlt.innerHTML = "🎬 Vizer";
-      lobbyElements.btnToggleQuickAlt.title = "Alternar para Vizer (primeira opção)";
+      lobbyElements.btnToggleQuickAlt.title = "Alternar para Vizer (segunda opção)";
+    } else if (isVizer) {
+      lobbyElements.btnToggleQuickAlt.innerHTML = "▶️ YouTube";
+      lobbyElements.btnToggleQuickAlt.title = "Alternar para YouTube (terceira opção)";
+    } else {
+      lobbyElements.btnToggleQuickAlt.innerHTML = "📺 RedeCanais";
+      lobbyElements.btnToggleQuickAlt.title = "Alternar para RedeCanais (opção principal)";
     }
   }
 }
@@ -1041,27 +1051,29 @@ if (lobbyElements.createStartUrl) {
   lobbyElements.createStartUrl.addEventListener("input", () => {
     syncUrlPresets(lobbyElements.createStartUrl.value);
   });
-  // Sincroniza estado inicial (Vizer ativo por padrão)
-  syncUrlPresets(lobbyElements.createStartUrl.value || PRESET_URLS.VIZER);
+  // Sincroniza estado inicial (RedeCanais ativo por padrão)
+  syncUrlPresets(lobbyElements.createStartUrl.value || PRESET_URLS.REDECANAIS);
 }
 
 if (lobbyElements.btnToggleQuickAlt) {
   lobbyElements.btnToggleQuickAlt.addEventListener("click", () => {
     const current = (lobbyElements.createStartUrl.value || "").trim().toLowerCase();
-    if (current.includes("vizer")) {
+    if (current.includes("redecanais")) {
+      lobbyElements.createStartUrl.value = PRESET_URLS.VIZER;
+    } else if (current.includes("vizer")) {
       lobbyElements.createStartUrl.value = PRESET_URLS.YOUTUBE;
     } else {
-      lobbyElements.createStartUrl.value = PRESET_URLS.VIZER;
+      lobbyElements.createStartUrl.value = PRESET_URLS.REDECANAIS;
     }
     syncUrlPresets(lobbyElements.createStartUrl.value);
     showToast(`URL definida: ${lobbyElements.createStartUrl.value}`, "info");
   });
 }
 
-if (lobbyElements.chipUrlYoutube) {
-  lobbyElements.chipUrlYoutube.addEventListener("click", () => {
-    lobbyElements.createStartUrl.value = PRESET_URLS.YOUTUBE;
-    syncUrlPresets(PRESET_URLS.YOUTUBE);
+if (lobbyElements.chipUrlRedecanais) {
+  lobbyElements.chipUrlRedecanais.addEventListener("click", () => {
+    lobbyElements.createStartUrl.value = PRESET_URLS.REDECANAIS;
+    syncUrlPresets(PRESET_URLS.REDECANAIS);
   });
 }
 
@@ -1069,6 +1081,13 @@ if (lobbyElements.chipUrlVizer) {
   lobbyElements.chipUrlVizer.addEventListener("click", () => {
     lobbyElements.createStartUrl.value = PRESET_URLS.VIZER;
     syncUrlPresets(PRESET_URLS.VIZER);
+  });
+}
+
+if (lobbyElements.chipUrlYoutube) {
+  lobbyElements.chipUrlYoutube.addEventListener("click", () => {
+    lobbyElements.createStartUrl.value = PRESET_URLS.YOUTUBE;
+    syncUrlPresets(PRESET_URLS.YOUTUBE);
   });
 }
 
@@ -1924,15 +1943,21 @@ if (roomElements.formNav) {
   });
 }
 
-if (roomElements.btnRoomNavYoutube) {
-  roomElements.btnRoomNavYoutube.addEventListener("click", async () => {
-    await navigateHyperbeamToUrl(PRESET_URLS.YOUTUBE);
+if (roomElements.btnRoomNavRedecanais) {
+  roomElements.btnRoomNavRedecanais.addEventListener("click", async () => {
+    await navigateHyperbeamToUrl(PRESET_URLS.REDECANAIS);
   });
 }
 
 if (roomElements.btnRoomNavVizer) {
   roomElements.btnRoomNavVizer.addEventListener("click", async () => {
     await navigateHyperbeamToUrl(PRESET_URLS.VIZER);
+  });
+}
+
+if (roomElements.btnRoomNavYoutube) {
+  roomElements.btnRoomNavYoutube.addEventListener("click", async () => {
+    await navigateHyperbeamToUrl(PRESET_URLS.YOUTUBE);
   });
 }
 
