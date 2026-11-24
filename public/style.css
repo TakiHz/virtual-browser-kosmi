@@ -2461,19 +2461,19 @@ body.fullscreen-active {
   left: calc((100vw - 380px) / 2);
   transform: translateX(-50%);
   z-index: 50;
-  background: rgba(18, 19, 22, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(18, 19, 22, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
   border-radius: var(--radius-pill);
-  padding: 6px 14px;
+  padding: 6px 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 1px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.5), 0 0 32px rgba(255, 255, 255, 0.25), 0 12px 36px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.15);
   pointer-events: auto;
-  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease, box-shadow 0.3s ease;
   box-sizing: border-box;
   max-width: calc(100vw - 420px);
 }
@@ -2482,12 +2482,8 @@ body.fullscreen-active {
   flex-shrink: 0;
 }
 
-.room-dock.dock-hidden {
-  display: none !important;
-}
-
 .room-dock.slim {
-  padding: 6px 14px;
+  padding: 6px 16px;
   gap: 8px;
   display: flex;
   align-items: center;
@@ -2502,6 +2498,8 @@ body.fullscreen-active .room-dock,
   transform: translateX(-50%) !important;
   z-index: 1000001 !important;
   max-width: 90vw !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.55), 0 0 40px rgba(255, 255, 255, 0.28), 0 12px 36px rgba(0, 0, 0, 0.9), inset 0 0 12px rgba(255, 255, 255, 0.18) !important;
 }
 
 .volume-control {
@@ -2520,28 +2518,6 @@ body.fullscreen-active .room-dock,
   max-width: 68px;
   accent-color: #22c55e;
   cursor: pointer;
-}
-
-.volume-boost-tag {
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: #86efac;
-  background: rgba(34, 197, 94, 0.18);
-  border: 1px solid rgba(74, 222, 128, 0.4);
-  padding: 1px 5px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  letter-spacing: 0.02em;
-  line-height: 1.1;
-  transition: var(--transition);
-}
-
-.volume-boost-tag.turbo {
-  color: #facc15;
-  background: rgba(234, 179, 8, 0.22);
-  border-color: rgba(250, 204, 21, 0.55);
-  box-shadow: 0 0 8px rgba(250, 204, 21, 0.35);
 }
 
 /* Botão de Controle Integrado (Verde = No Controle, Vermelho = Fora do Controle) */
@@ -2733,21 +2709,7 @@ body.fullscreen-active .room-dock,
   cursor: pointer;
 }
 
-.btn-collapse {
-  opacity: 0.8;
-}
 
-.btn-collapse:hover {
-  opacity: 1;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.collapse-arrow {
-  display: inline-block;
-  font-size: 0.65rem;
-  line-height: 1;
-  color: var(--text-secondary);
-}
 
 /* 3. CHAT E SIDEBAR INTEGRADOS NA COLUNA DIREITA */
 .room-sidebar {
@@ -3223,9 +3185,10 @@ body.fullscreen-active .room-dock,
     bottom: auto !important;
     border-radius: 0 !important;
     border: none !important;
-    border-bottom: 1px solid var(--border-subtle) !important;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.85) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25) !important;
     background: var(--bg-elevated) !important;
-    padding: 5px 8px !important;
+    padding: 6px 10px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: flex-start !important;
@@ -3234,7 +3197,7 @@ body.fullscreen-active .room-dock,
     overflow-y: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
-    box-shadow: none !important;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.35) !important;
     max-width: 100vw !important;
     box-sizing: border-box !important;
     z-index: 20 !important;
@@ -3246,11 +3209,6 @@ body.fullscreen-active .room-dock,
 
   .room-dock > * {
     flex-shrink: 0 !important;
-  }
-
-  /* Seta para baixo oculta toda a barra de controles */
-  .room-dock.dock-hidden {
-    display: none !important;
   }
 
   .btn-dock-slim {

@@ -85,10 +85,6 @@ const modalElements = {
 
 const roomElements = {
   roomDock: document.getElementById("room-dock"),
-  btnCollapseDock: document.getElementById("btn-collapse-dock"),
-  collapseArrowIcon: document.getElementById("collapse-arrow-icon"),
-  btnUnhideDock: document.getElementById("btn-unhide-dock"),
-  dockCollapsible: document.getElementById("dock-collapsible"),
   mobileTypingBar: document.getElementById("mobile-typing-bar"),
   mobileKeyboardProxy: document.getElementById("mobile-keyboard-proxy"),
   btnSendTypedText: document.getElementById("btn-send-typed-text"),
@@ -109,7 +105,6 @@ const roomElements = {
   btnTogglePopupBlock: document.getElementById("btn-toggle-popup-block"),
   btnMute: document.getElementById("btn-mute"),
   volumeSlider: document.getElementById("volume-slider"),
-  volumeBoostLabel: document.getElementById("volume-boost-label"),
   btnFullscreen: document.getElementById("btn-fullscreen"),
   btnFullscreenExit: document.getElementById("btn-fullscreen-exit"),
   btnToggleSidebar: document.getElementById("btn-toggle-sidebar"),
@@ -1183,86 +1178,17 @@ async function joinRoom(rawCode) {
   }
 }
 
-// ====================================================
-// WEB AUDIO API BOOSTER (AMPLIFICAÇÃO TURBO ATÉ 300%)
-// ====================================================
-let audioCtx = null;
-let boostGainNode = null;
-let boostCompressor = null;
-let boostSourceNode = null;
-
-function setupAudioBooster(track) {
-  if (!track) return;
-  try {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) {
-      console.warn("[AudioBooster] Web Audio API não suportada.");
-      return;
-    }
-
-    if (!audioCtx) {
-      audioCtx = new AudioContextClass();
-    }
-
-    const unlockAudio = () => {
-      if (audioCtx && audioCtx.state === "suspended") {
-        audioCtx.resume().catch(() => {});
-      }
-    };
-    if (audioCtx.state === "suspended") {
-      audioCtx.resume().catch(() => {});
-      window.addEventListener("click", unlockAudio, { once: true });
-      window.addEventListener("touchstart", unlockAudio, { once: true });
-    }
-
-    const stream = new MediaStream([track]);
-    if (boostSourceNode) {
-      try {
-        boostSourceNode.disconnect();
-      } catch (_) {}
-    }
-    boostSourceNode = audioCtx.createMediaStreamSource(stream);
-
-    if (!boostGainNode) {
-      boostGainNode = audioCtx.createGain();
-      const currentSliderVal = parseFloat(roomElements.volumeSlider ? roomElements.volumeSlider.value : "2.5");
-      boostGainNode.gain.value = currentSliderVal;
-    }
-
-    if (!boostCompressor) {
-      // Compressor dinâmico profissional para evitar saturação/clipping ao amplificar até 300%
-      boostCompressor = audioCtx.createDynamicsCompressor();
-      boostCompressor.threshold.setValueAtTime(-14, audioCtx.currentTime);
-      boostCompressor.knee.setValueAtTime(25, audioCtx.currentTime);
-      boostCompressor.ratio.setValueAtTime(10, audioCtx.currentTime);
-      boostCompressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
-      boostCompressor.release.setValueAtTime(0.25, audioCtx.currentTime);
-    }
-
-    boostSourceNode.connect(boostGainNode);
-    boostGainNode.connect(boostCompressor);
-    boostCompressor.connect(audioCtx.destination);
-
-    console.log(`[AudioBooster] Web Audio ativo! Volume amplificado para ${Math.round(boostGainNode.gain.value * 100)}% com compressor anti-distorção.`);
-  } catch (err) {
-    console.warn("[AudioBooster error]:", err);
-  }
-}
-
 async function mountHyperbeam(embedUrl) {
   try {
     // Limpa o container antes de montar
     roomElements.browserMount.innerHTML = "";
 
-    // Instancia o cliente WebRTC do Hyperbeam com Booster de Áudio 300%
+    // Instancia o cliente WebRTC do Hyperbeam
     state.hbInstance = await Hyperbeam(roomElements.browserMount, embedUrl, {
       disableInput: true, // Inicia como espectador até assumir controle
       delegateKeyboard: true,
       playoutDelay: true, // Suaviza o vídeo eliminando frame drops e travamentos de WebRTC
-      volume: Math.min(1, parseFloat(roomElements.volumeSlider ? roomElements.volumeSlider.value : "1")),
-      audioTrackCb: (track) => {
-        setupAudioBooster(track);
-      },
+      volume: parseFloat(roomElements.volumeSlider ? roomElements.volumeSlider.value : "1"),
       onDisconnect: () => {
         showToast("Navegador virtual desconectado.", "info");
       },
@@ -1694,38 +1620,10 @@ function setupKeyboardProxy() {
   });
 }
 
-// ====================================================
-// OCULTAR / COLAPSAR BARRA DE CONTROLES COM SETA PARA BAIXO
-// ====================================================
-function setupDockCollapse() {
-  const dock = roomElements.roomDock;
-  const btnCollapse = roomElements.btnCollapseDock;
-  const btnUnhide = roomElements.btnUnhideDock;
-
-  if (!dock) return;
-
-  const isHidden = localStorage.getItem("dock_hidden") === "true";
-  if (isHidden) {
-    dock.classList.add("dock-hidden");
-    if (btnUnhide) btnUnhide.classList.remove("hidden");
-  }
-
-  if (btnCollapse) {
-    btnCollapse.addEventListener("click", () => {
-      dock.classList.add("dock-hidden");
-      if (btnUnhide) btnUnhide.classList.remove("hidden");
-      localStorage.setItem("dock_hidden", "true");
-      showToast("Barra de controles ocultada. Clique em '▲ Controles' para reexibir.", "info");
-    });
-  }
-
-  if (btnUnhide) {
-    btnUnhide.addEventListener("click", () => {
-      dock.classList.remove("dock-hidden");
-      btnUnhide.classList.add("hidden");
-      localStorage.setItem("dock_hidden", "false");
-    });
-  }
+// Garante que a barra de controles nunca fique oculta por sessões anteriores
+localStorage.removeItem("dock_hidden");
+if (roomElements.roomDock) {
+  roomElements.roomDock.classList.remove("dock-hidden");
 }
 
 function connectRoomWebSocket(code) {
@@ -2013,35 +1911,18 @@ if (roomElements.btnRoomNavVizer) {
 // ====================================================
 // CONTROLES DE ÁUDIO (AMPLIFICADOR TURBO 300%) & TELA CHEIA
 // ====================================================
+// CONTROLE DE VOLUME NATIVO
+// ====================================================
 if (roomElements.volumeSlider) {
   roomElements.volumeSlider.addEventListener("input", (e) => {
     const vol = parseFloat(e.target.value);
-
-    // Amplificação via Web Audio API (suporta até 300% / 3.0x)
-    if (boostGainNode) {
-      boostGainNode.gain.value = vol;
-    }
-
-    // Volume padrão do Hyperbeam (limitado a 1.0)
     if (state.hbInstance) {
       try {
-        state.hbInstance.volume = Math.min(1, vol);
+        state.hbInstance.volume = Math.max(0, Math.min(1, vol));
       } catch (_) {}
     }
-
     if (roomElements.btnMute) {
-      roomElements.btnMute.textContent = vol === 0 ? "🔇" : "🔊";
-    }
-
-    const boostLabel = roomElements.volumeBoostLabel || document.getElementById("volume-boost-label");
-    if (boostLabel) {
-      const pct = Math.round(vol * 100);
-      boostLabel.textContent = `${pct}%`;
-      if (vol > 1) {
-        boostLabel.classList.add("turbo");
-      } else {
-        boostLabel.classList.remove("turbo");
-      }
+      roomElements.btnMute.textContent = vol === 0 ? "🔇" : (vol < 0.5 ? "🔉" : "🔊");
     }
   });
 }
@@ -2050,41 +1931,25 @@ if (roomElements.btnMute) {
   roomElements.btnMute.addEventListener("click", () => {
     if (!roomElements.volumeSlider) return;
     const currentVol = parseFloat(roomElements.volumeSlider.value);
-    const boostLabel = roomElements.volumeBoostLabel || document.getElementById("volume-boost-label");
 
     if (currentVol > 0) {
       roomElements.volumeSlider.dataset.prevVolume = currentVol;
       roomElements.volumeSlider.value = 0;
-      if (boostGainNode) boostGainNode.gain.value = 0;
       if (state.hbInstance) {
         try {
           state.hbInstance.volume = 0;
         } catch (_) {}
       }
       roomElements.btnMute.textContent = "🔇";
-      if (boostLabel) {
-        boostLabel.textContent = "0%";
-        boostLabel.classList.remove("turbo");
-      }
     } else {
-      const restoreVol = parseFloat(roomElements.volumeSlider.dataset.prevVolume || "2.5");
+      const restoreVol = parseFloat(roomElements.volumeSlider.dataset.prevVolume || "1");
       roomElements.volumeSlider.value = restoreVol;
-      if (boostGainNode) boostGainNode.gain.value = restoreVol;
       if (state.hbInstance) {
         try {
-          state.hbInstance.volume = Math.min(1, restoreVol);
+          state.hbInstance.volume = restoreVol;
         } catch (_) {}
       }
-      roomElements.btnMute.textContent = "🔊";
-      if (boostLabel) {
-        const pct = Math.round(restoreVol * 100);
-        boostLabel.textContent = `${pct}%`;
-        if (restoreVol > 1) {
-          boostLabel.classList.add("turbo");
-        } else {
-          boostLabel.classList.remove("turbo");
-        }
-      }
+      roomElements.btnMute.textContent = restoreVol < 0.5 ? "🔉" : "🔊";
     }
   });
 }
@@ -2722,7 +2587,6 @@ function escapeHTML(str) {
 // START
 // ====================================================
 window.addEventListener("DOMContentLoaded", () => {
-  setupDockCollapse();
   setupKeyboardProxy();
   checkInviteRoute();
   checkAuth();

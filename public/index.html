@@ -234,10 +234,6 @@
         <span class="fs-text">Estender Tela</span>
       </button>
 
-      <!-- BOTÃO FLUTUANTE PARA REEXIBIR CONTROLES QUANDO OCULTADOS PELA SETA -->
-      <button id="btn-unhide-dock" class="btn-unhide-dock hidden" title="Mostrar barra de controles">
-        ▲ Controles
-      </button>
 
       <!-- BARRA DE AÇÕES FLUTUANTES EM TELA CHEIA (PC & CELULAR) -->
       <div id="fullscreen-action-bar" class="fullscreen-action-bar hidden">
@@ -309,20 +305,14 @@
         🛡️ Pop-ups: ON
       </button>
 
-      <!-- Volume com Booster 300% -->
-      <div class="volume-control" title="Amplificador de Volume Turbo (até 300%)">
+      <!-- Controle de Volume -->
+      <div class="volume-control" title="Volume">
         <button id="btn-mute" class="btn-dock-icon" title="Silenciar / Ativar">🔊</button>
-        <input type="range" id="volume-slider" min="0" max="3" step="0.1" value="2.5" title="Volume Amplificado (Turbo Boost até 300%)" />
-        <span id="volume-boost-label" class="volume-boost-tag">Boost</span>
+        <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1" title="Volume" />
       </div>
 
       <!-- Tela Cheia -->
       <button id="btn-fullscreen" class="btn-dock-icon" title="Tela Cheia">⛶</button>
-
-      <!-- Seta Para Baixo: Ocultar toda a barra de controles -->
-      <button id="btn-collapse-dock" class="btn-dock-icon btn-collapse" title="Ocultar toda a barra de controles">
-        <span class="collapse-arrow" id="collapse-arrow-icon">▼</span>
-      </button>
     </div>
 
     <!-- PAINEL DA DIREITA NO PC (TUDO À DIREITA) / LAYOUT INTEGRADO NO CELULAR -->
