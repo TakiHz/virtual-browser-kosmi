@@ -41,7 +41,7 @@ const lobbyElements = {
   createStartUrl: document.getElementById("create-start-url"),
   btnToggleQuickAlt: document.getElementById("btn-toggle-quick-alt"),
   chipUrlRedecanais: document.getElementById("chip-url-redecanais"),
-  chipUrlVizer: document.getElementById("chip-url-vizer"),
+  chipUrlMegafilmes: document.getElementById("chip-url-megafilmes"),
   chipUrlYoutube: document.getElementById("chip-url-youtube"),
   btnCreateRoom: document.getElementById("btn-create-room"),
   btnCreateText: document.getElementById("btn-create-text"),
@@ -146,15 +146,17 @@ const roomElements = {
   formNav: document.getElementById("form-room-nav"),
   inputNavUrl: document.getElementById("input-room-nav-url"),
   btnRoomNavRedecanais: document.getElementById("btn-room-nav-redecanais"),
-  btnRoomNavVizer: document.getElementById("btn-room-nav-vizer"),
+  btnRoomNavMegafilmes: document.getElementById("btn-room-nav-megafilmes"),
   btnRoomNavYoutube: document.getElementById("btn-room-nav-youtube"),
   btnCollapseDock: document.getElementById("btn-collapse-dock"),
   btnToggleDockVisibility: document.getElementById("btn-toggle-dock-visibility"),
   dockToggleIcon: document.getElementById("dock-toggle-icon"),
   dockToggleText: document.getElementById("dock-toggle-text"),
   fullscreenActionBar: document.getElementById("fullscreen-action-bar"),
+  btnActionFullscreen: document.getElementById("btn-action-fullscreen"),
+  actionFsIcon: document.getElementById("action-fs-icon"),
+  actionFsText: document.getElementById("action-fs-text"),
   btnFullscreenChatToggle: document.getElementById("btn-fullscreen-chat-toggle"),
-  btnTheaterToggle: document.getElementById("btn-theater-mode-toggle"),
   fsChatBadge: document.getElementById("fs-chat-badge"),
   fullscreenChatOverlay: document.getElementById("fullscreen-chat-overlay"),
   fsChatMessages: document.getElementById("fs-chat-messages"),
@@ -942,11 +944,11 @@ lobbyElements.btnLogout.addEventListener("click", async () => {
 });
 
 // ====================================================
-// ATALHOS & ALTERNATIVAS DE STREAMING (REDECANAIS, VIZER & YOUTUBE)
+// ATALHOS & ALTERNATIVAS DE STREAMING (REDECANAIS, MEGAFILMES & YOUTUBE)
 // ====================================================
 const PRESET_URLS = {
   REDECANAIS: "https://redecanaishd.cam/",
-  VIZER: "https://vizer.bio/",
+  MEGAFILMES: "https://megafilmes.pics/",
   YOUTUBE: "https://www.youtube.com?gl=BR&hl=pt",
 };
 
@@ -1019,14 +1021,14 @@ lobbyElements.formCreate.addEventListener("submit", async (e) => {
 function syncUrlPresets(currentUrl) {
   const norm = (currentUrl || "").trim().toLowerCase();
   const isRedecanais = norm.includes("redecanais");
-  const isVizer = norm.includes("vizer");
+  const isMegafilmes = norm.includes("megafilmes");
   const isYt = norm.includes("youtube.com") || norm.includes("youtu.be");
 
   if (lobbyElements.chipUrlRedecanais) {
     lobbyElements.chipUrlRedecanais.classList.toggle("active", isRedecanais);
   }
-  if (lobbyElements.chipUrlVizer) {
-    lobbyElements.chipUrlVizer.classList.toggle("active", isVizer);
+  if (lobbyElements.chipUrlMegafilmes) {
+    lobbyElements.chipUrlMegafilmes.classList.toggle("active", isMegafilmes);
   }
   if (lobbyElements.chipUrlYoutube) {
     lobbyElements.chipUrlYoutube.classList.toggle("active", isYt);
@@ -1035,9 +1037,9 @@ function syncUrlPresets(currentUrl) {
   // O botão do lado funciona como alternador direto
   if (lobbyElements.btnToggleQuickAlt) {
     if (isRedecanais) {
-      lobbyElements.btnToggleQuickAlt.innerHTML = "🎬 Vizer";
-      lobbyElements.btnToggleQuickAlt.title = "Alternar para Vizer (segunda opção)";
-    } else if (isVizer) {
+      lobbyElements.btnToggleQuickAlt.innerHTML = "🎬 MegaFilmes";
+      lobbyElements.btnToggleQuickAlt.title = "Alternar para MegaFilmes (segunda opção)";
+    } else if (isMegafilmes) {
       lobbyElements.btnToggleQuickAlt.innerHTML = "▶️ YouTube";
       lobbyElements.btnToggleQuickAlt.title = "Alternar para YouTube (terceira opção)";
     } else {
@@ -1059,8 +1061,8 @@ if (lobbyElements.btnToggleQuickAlt) {
   lobbyElements.btnToggleQuickAlt.addEventListener("click", () => {
     const current = (lobbyElements.createStartUrl.value || "").trim().toLowerCase();
     if (current.includes("redecanais")) {
-      lobbyElements.createStartUrl.value = PRESET_URLS.VIZER;
-    } else if (current.includes("vizer")) {
+      lobbyElements.createStartUrl.value = PRESET_URLS.MEGAFILMES;
+    } else if (current.includes("megafilmes")) {
       lobbyElements.createStartUrl.value = PRESET_URLS.YOUTUBE;
     } else {
       lobbyElements.createStartUrl.value = PRESET_URLS.REDECANAIS;
@@ -1077,10 +1079,10 @@ if (lobbyElements.chipUrlRedecanais) {
   });
 }
 
-if (lobbyElements.chipUrlVizer) {
-  lobbyElements.chipUrlVizer.addEventListener("click", () => {
-    lobbyElements.createStartUrl.value = PRESET_URLS.VIZER;
-    syncUrlPresets(PRESET_URLS.VIZER);
+if (lobbyElements.chipUrlMegafilmes) {
+  lobbyElements.chipUrlMegafilmes.addEventListener("click", () => {
+    lobbyElements.createStartUrl.value = PRESET_URLS.MEGAFILMES;
+    syncUrlPresets(PRESET_URLS.MEGAFILMES);
   });
 }
 
@@ -1949,9 +1951,9 @@ if (roomElements.btnRoomNavRedecanais) {
   });
 }
 
-if (roomElements.btnRoomNavVizer) {
-  roomElements.btnRoomNavVizer.addEventListener("click", async () => {
-    await navigateHyperbeamToUrl(PRESET_URLS.VIZER);
+if (roomElements.btnRoomNavMegafilmes) {
+  roomElements.btnRoomNavMegafilmes.addEventListener("click", async () => {
+    await navigateHyperbeamToUrl(PRESET_URLS.MEGAFILMES);
   });
 }
 
@@ -2031,7 +2033,7 @@ let shouldLockLandscape = false;
 let isEmulatedFullscreen = false;
 let isFsChatOpen = false;
 let unreadFsMessages = 0;
-let isFsChatUltraTranslucent = false;
+let isFsChatHighContrast = false;
 
 function updateFsChatBadge() {
   const badge = roomElements.fsChatBadge || document.getElementById("fs-chat-badge");
@@ -2081,13 +2083,13 @@ function toggleFullscreenChat(forceState) {
 function toggleFsChatOpacity() {
   const overlay = roomElements.fullscreenChatOverlay || document.getElementById("fullscreen-chat-overlay");
   if (!overlay) return;
-  isFsChatUltraTranslucent = !isFsChatUltraTranslucent;
-  if (isFsChatUltraTranslucent) {
-    overlay.classList.add("ultra-translucent");
-    showToast("Chat com transparência máxima (vídeo em destaque)", "info");
+  isFsChatHighContrast = !isFsChatHighContrast;
+  if (isFsChatHighContrast) {
+    overlay.classList.add("high-contrast");
+    showToast("Chat: Opacidade máxima (98%)", "info");
   } else {
-    overlay.classList.remove("ultra-translucent");
-    showToast("Chat com opacidade alta (90% de contraste)", "info");
+    overlay.classList.remove("high-contrast");
+    showToast("Chat: Opacidade balanceada (94%)", "info");
   }
 }
 
@@ -2106,14 +2108,25 @@ function isCurrentlyFullscreen() {
 }
 
 function updateFullscreenUIState(isFs) {
+  const btnActionFs = roomElements.btnActionFullscreen || document.getElementById("btn-action-fullscreen");
+  const actionFsIcon = roomElements.actionFsIcon || document.getElementById("action-fs-icon");
+  const actionFsText = roomElements.actionFsText || document.getElementById("action-fs-text");
   const btnExit = document.getElementById("btn-fullscreen-exit");
 
+  if (btnActionFs) {
+    btnActionFs.title = isFs ? "Sair da Tela Cheia" : "Tela Cheia";
+    btnActionFs.classList.toggle("active", isFs);
+  }
+  if (actionFsIcon) {
+    actionFsIcon.innerHTML = isFs ? LUCIDE_ICONS.minimize : LUCIDE_ICONS.maximize;
+  }
+  if (actionFsText) {
+    actionFsText.textContent = isFs ? "Sair" : "Tela Cheia";
+  }
+
   if (btnExit) {
-    if (isFs) {
-      btnExit.classList.remove("hidden");
-    } else {
-      btnExit.classList.add("hidden");
-    }
+    // btnActionFs atua como botão unificado
+    btnExit.classList.add("hidden");
   }
 
   if (!isFs) {
@@ -2369,26 +2382,16 @@ if (roomElements.btnCollapseDock) {
   });
 }
 
-// MODO CINEMA / TEATRO (PC: Expande o vídeo para 100% da largura da janela)
-function toggleTheaterMode(force) {
-  const isTheater = typeof force === "boolean"
-    ? force
-    : !document.body.classList.contains("theater-mode");
-
-  document.body.classList.toggle("theater-mode", isTheater);
-  const btn = document.getElementById("btn-theater-mode-toggle");
-  if (btn) {
-    btn.classList.toggle("active", isTheater);
-    btn.title = isTheater ? "Sair do Modo Teatro (T)" : "Modo Teatro / Expandir Vídeo (T)";
-  }
-  showToast(isTheater ? "Modo Teatro ativado (tecla T)" : "Modo Teatro desativado", "info");
-}
-
-const btnTheaterToggle = document.getElementById("btn-theater-mode-toggle");
-if (btnTheaterToggle) {
-  btnTheaterToggle.addEventListener("click", (e) => {
+// BOTÃO DE TELA CHEIA NA BARRA SUPERIOR (Substitui Teatro)
+const btnActionFs = roomElements.btnActionFullscreen || document.getElementById("btn-action-fullscreen");
+if (btnActionFs) {
+  btnActionFs.addEventListener("click", (e) => {
     e.stopPropagation();
-    toggleTheaterMode();
+    if (isCurrentlyFullscreen()) {
+      exitFullscreenAndUnlock();
+    } else {
+      enterFullscreenWithLandscape();
+    }
   });
 }
 
@@ -2404,12 +2407,7 @@ const btnFsChatToggle = document.getElementById("btn-fullscreen-chat-toggle");
 if (btnFsChatToggle) {
   btnFsChatToggle.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (isCurrentlyFullscreen()) {
-      toggleFullscreenChat();
-    } else {
-      // No modo normal no PC, alterna a barra lateral da direita para expandir o vídeo (Modo Teatro)
-      toggleTheaterMode();
-    }
+    toggleFullscreenChat();
   });
 }
 
@@ -2520,33 +2518,7 @@ if (roomElements.browserMount) {
   }, { passive: true });
 }
 
-// Fechar tela cheia com tecla ESC, chat com C, modo teatro com T
-window.addEventListener("keydown", (e) => {
-  const isInputActive = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
-  if (e.key === "Escape") {
-    if (isFsChatOpen) {
-      toggleFullscreenChat(false);
-      return;
-    }
-    if (isCurrentlyFullscreen()) {
-      exitFullscreenAndUnlock();
-      return;
-    }
-    if (document.body.classList.contains("theater-mode")) {
-      toggleTheaterMode(false);
-      return;
-    }
-  }
-  if ((e.key === "c" || e.key === "C") && isCurrentlyFullscreen() && !isInputActive) {
-    toggleFullscreenChat();
-  }
-  if ((e.key === "t" || e.key === "T") && !isCurrentlyFullscreen() && !isInputActive) {
-    const roomView = document.getElementById("view-room");
-    if (roomView && !roomView.classList.contains("hidden")) {
-      toggleTheaterMode();
-    }
-  }
-});
+// Sem atalhos de teclado globais - todas as interações dependem estritamente de cliques na interface (atendendo à solicitação do usuário)
 
 // Suporte para giro de tela no iPhone
 window.addEventListener("orientationchange", () => {

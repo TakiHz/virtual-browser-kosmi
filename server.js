@@ -305,7 +305,7 @@ async function requestHyperbeamVM(startUrl = "https://redecanaishd.cam/", retrie
 
       // Roteamento inteligente Smart PAC:
       // - Fast.com, Speedtest e YouTube vão DIRECT para medir banda máxima e economizar recursos do proxy
-      // - Vizer e players de filmes passam pelo IP regional (${defaultCountry})
+      // - MegaFilmes e players de filmes passam pelo IP regional (${defaultCountry})
       const smartPacScript = `function FindProxyForURL(url, host) {
   var h = ("" + host).toLowerCase();
   var u = ("" + url).toLowerCase();

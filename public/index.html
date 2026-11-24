@@ -113,12 +113,12 @@
             <div class="field-group">
               <div class="field-label-row">
                 <label for="create-start-url">URL Inicial (Site ou Streaming)</label>
-                <span class="field-hint">RedeCanais, Vizer ou YouTube</span>
+                <span class="field-hint">RedeCanais, MegaFilmes ou YouTube</span>
               </div>
               <div class="url-input-container">
-                <input type="text" id="create-start-url" value="https://redecanaishd.cam/" placeholder="Cole link do RedeCanais, Vizer, YouTube ou .m3u8..." />
+                <input type="text" id="create-start-url" value="https://redecanaishd.cam/" placeholder="Cole link do RedeCanais, MegaFilmes, YouTube ou .m3u8..." />
                 <button type="button" class="btn-url-quick-alt" id="btn-toggle-quick-alt" title="Alternar entre sites recomendados">
-                  🎬 Vizer
+                  🎬 MegaFilmes
                 </button>
               </div>
               <div class="url-choice-chips">
@@ -126,9 +126,9 @@
                   <span class="chip-icon">📺</span>
                   <span class="chip-text">RedeCanais</span>
                 </button>
-                <button type="button" class="choice-chip" id="chip-url-vizer" data-url="https://vizer.bio/" title="Usar Vizer como opção secundária (Filmes e Séries)">
+                <button type="button" class="choice-chip" id="chip-url-megafilmes" data-url="https://megafilmes.pics/" title="Usar MegaFilmes como opção secundária (Filmes e Séries)">
                   <span class="chip-icon">🎬</span>
-                  <span class="chip-text">Vizer</span>
+                  <span class="chip-text">MegaFilmes</span>
                 </button>
                 <button type="button" class="choice-chip" id="chip-url-youtube" data-url="https://www.youtube.com?gl=BR&hl=pt" title="Usar YouTube (Vídeos e Músicas)">
                   <span class="chip-icon">▶️</span>
@@ -245,15 +245,15 @@
           <span class="fs-pill-text" id="dock-toggle-text">Barra</span>
         </button>
 
-        <!-- BOTÃO MODO CINEMA / TEATRO (PC) -->
-        <button id="btn-theater-mode-toggle" class="btn-fs-pill" type="button" title="Modo Cinema / Teatro (Tecla T)">
-          <span class="fs-pill-icon">
-            <svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M17 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg>
+        <!-- BOTÃO TELA CHEIA (TOGGLE COMPLETO TELA CHEIA / SAIR) -->
+        <button id="btn-action-fullscreen" class="btn-fs-pill" type="button" title="Tela Cheia">
+          <span class="fs-pill-icon" id="action-fs-icon">
+            <svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></svg>
           </span>
-          <span class="fs-pill-text">Teatro</span>
+          <span class="fs-pill-text" id="action-fs-text">Tela Cheia</span>
         </button>
 
-        <button id="btn-fullscreen-chat-toggle" class="btn-fs-pill" type="button" title="Abrir ou alternar chat">
+        <button id="btn-fullscreen-chat-toggle" class="btn-fs-pill" type="button" title="Abrir ou fechar chat">
           <span class="fs-pill-icon">
             <svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </span>
@@ -261,7 +261,7 @@
           <span id="fs-chat-badge" class="fs-chat-badge hidden">0</span>
         </button>
 
-        <button id="btn-fullscreen-exit" class="btn-fs-pill btn-fs-exit hidden" type="button" title="Sair da tela cheia (ESC)">
+        <button id="btn-fullscreen-exit" class="btn-fs-pill btn-fs-exit hidden" type="button" title="Sair da tela cheia">
           <span class="fs-pill-icon">
             <svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </span>
@@ -415,8 +415,8 @@
             <button type="button" class="btn-room-nav-quick primary-quick" id="btn-room-nav-redecanais" data-url="https://redecanaishd.cam/" title="Navegar para RedeCanais (Principal: Filmes, Séries e TV)">
               📺 RedeCanais
             </button>
-            <button type="button" class="btn-room-nav-quick" id="btn-room-nav-vizer" data-url="https://vizer.bio/" title="Navegar para Vizer (Secundário: Filmes e Séries)">
-              🎬 Vizer
+            <button type="button" class="btn-room-nav-quick" id="btn-room-nav-megafilmes" data-url="https://megafilmes.pics/" title="Navegar para MegaFilmes (Secundário: Filmes e Séries)">
+              🎬 MegaFilmes
             </button>
             <button type="button" class="btn-room-nav-quick" id="btn-room-nav-youtube" data-url="https://www.youtube.com?gl=BR&hl=pt" title="Navegar para o YouTube (Terceiro: Vídeos e Músicas)">
               ▶️ YouTube
