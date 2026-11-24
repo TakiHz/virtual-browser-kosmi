@@ -1554,53 +1554,7 @@ body {
   display: none !important;
 }
 
-/* BOTÃO FLUTUANTE PARA ESTENDER TELA / TELA CHEIA DIRETO NO VÍDEO */
-.btn-fullscreen-floating {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  top: max(14px, env(safe-area-inset-top, 14px));
-  right: max(14px, env(safe-area-inset-right, 14px));
-  z-index: 9999;
-  background: rgba(18, 24, 20, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  color: #f0fdf4;
-  border: 1px solid rgba(74, 222, 128, 0.45);
-  border-radius: var(--radius-pill);
-  padding: 8px 16px;
-  font-family: var(--font-main);
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  opacity: 0.9;
-  box-shadow: 0 0 16px rgba(34, 197, 94, 0.28), 0 4px 14px rgba(0, 0, 0, 0.5);
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: auto;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: manipulation;
-}
 
-.btn-fullscreen-floating:hover,
-.btn-fullscreen-floating:active {
-  opacity: 1;
-  background: rgba(22, 163, 74, 0.92);
-  border-color: #86efac;
-  transform: scale(1.04);
-  box-shadow: 0 0 24px rgba(34, 197, 94, 0.55), 0 6px 18px rgba(0, 0, 0, 0.6);
-}
-
-.btn-fullscreen-floating .fs-icon {
-  font-size: 0.95rem;
-}
-
-.btn-fullscreen-floating.hidden {
-  display: none !important;
-}
 
 /* BARRA DE AÇÕES FLUTUANTES EM TELA CHEIA (PC & CELULAR) */
 .fullscreen-action-bar {
@@ -2502,6 +2456,101 @@ body.fullscreen-active .room-dock,
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.55), 0 0 40px rgba(255, 255, 255, 0.28), 0 12px 36px rgba(0, 0, 0, 0.9), inset 0 0 12px rgba(255, 255, 255, 0.18) !important;
 }
 
+/* Estado oculto da barra de controles (rebaixada pela seta) */
+.room-dock.dock-hidden {
+  opacity: 0 !important;
+  transform: translateX(-50%) translateY(120px) !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+body.fullscreen-active .room-dock.dock-hidden,
+:fullscreen .room-dock.dock-hidden,
+:-webkit-full-screen .room-dock.dock-hidden {
+  transform: translateX(-50%) translateY(120px) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* Botão de seta para baixo na barra (Ocultar / Baixar dock) */
+.btn-collapse {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-pill);
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.btn-collapse:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: #fff;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
+  transform: translateY(1px);
+}
+
+.collapse-arrow {
+  display: inline-block;
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+/* Botão para reexibir controles (Seta para cima) */
+.btn-unhide-dock {
+  position: absolute;
+  bottom: 12px;
+  left: calc((100vw - 380px) / 2);
+  transform: translateX(-50%);
+  z-index: 50;
+  background: rgba(18, 19, 22, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.5), 0 0 32px rgba(255, 255, 255, 0.25), 0 8px 24px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-pill);
+  padding: 5px 14px;
+  color: #fff;
+  font-family: var(--font-main);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: auto;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.btn-unhide-dock:hover {
+  background: rgba(30, 32, 38, 0.98);
+  border-color: #fff;
+  box-shadow: 0 0 22px rgba(255, 255, 255, 0.7), 0 0 40px rgba(255, 255, 255, 0.35);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.btn-unhide-dock.hidden {
+  display: none !important;
+}
+
+body.fullscreen-active .btn-unhide-dock,
+:fullscreen .btn-unhide-dock,
+:-webkit-full-screen .btn-unhide-dock {
+  left: 50% !important;
+  bottom: 16px !important;
+  transform: translateX(-50%) !important;
+  z-index: 1000002 !important;
+}
+
 .volume-control {
   display: flex;
   align-items: center;
@@ -3209,6 +3258,19 @@ body.fullscreen-active .room-dock,
 
   .room-dock > * {
     flex-shrink: 0 !important;
+  }
+
+  /* Ocultar dock no celular quando colapsado */
+  .room-dock.dock-hidden {
+    display: none !important;
+  }
+
+  .btn-unhide-dock {
+    position: fixed !important;
+    bottom: 16px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 9999 !important;
   }
 
   .btn-dock-slim {

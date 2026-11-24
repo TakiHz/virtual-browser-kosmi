@@ -122,7 +122,8 @@ const roomElements = {
   inputNavUrl: document.getElementById("input-room-nav-url"),
   btnRoomNavYoutube: document.getElementById("btn-room-nav-youtube"),
   btnRoomNavVizer: document.getElementById("btn-room-nav-vizer"),
-  btnFullscreenFloating: document.getElementById("btn-fullscreen-floating"),
+  btnCollapseDock: document.getElementById("btn-collapse-dock"),
+  btnUnhideDock: document.getElementById("btn-unhide-dock"),
   fullscreenActionBar: document.getElementById("fullscreen-action-bar"),
   btnFullscreenChatToggle: document.getElementById("btn-fullscreen-chat-toggle"),
   fsChatBadge: document.getElementById("fs-chat-badge"),
@@ -184,6 +185,10 @@ function showScreen(screenName) {
       views[name].classList.remove("active");
     }
   });
+  if (screenName === "room") {
+    if (roomElements.roomDock) roomElements.roomDock.classList.remove("dock-hidden");
+    if (roomElements.btnUnhideDock) roomElements.btnUnhideDock.classList.add("hidden");
+  }
 }
 
 // ====================================================
@@ -2055,7 +2060,6 @@ function isCurrentlyFullscreen() {
 function updateFullscreenUIState(isFs) {
   const actionBar = document.getElementById("fullscreen-action-bar");
   const btnExit = document.getElementById("btn-fullscreen-exit");
-  const btnFloating = document.getElementById("btn-fullscreen-floating");
 
   if (actionBar) {
     if (isFs) {
@@ -2070,13 +2074,6 @@ function updateFullscreenUIState(isFs) {
       btnExit.classList.remove("hidden");
     } else {
       btnExit.classList.add("hidden");
-    }
-  }
-  if (btnFloating) {
-    if (isFs) {
-      btnFloating.classList.add("hidden");
-    } else {
-      btnFloating.classList.remove("hidden");
     }
   }
 
@@ -2293,7 +2290,7 @@ document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
 document.addEventListener("mozfullscreenchange", handleFullscreenChange);
 document.addEventListener("MSFullscreenChange", handleFullscreenChange);
 
-// Dispara tecla de tela cheia no player interno do navegador virtual (F11 e tecla 'f')
+// Dispara tecla de tela cheia no player interno do navegador virtual (F11)
 function triggerVirtualBrowserFullscreen() {
   if (!state.hbInstance) {
     showToast("Navegador virtual não iniciado.", "warning");
@@ -2301,23 +2298,13 @@ function triggerVirtualBrowserFullscreen() {
   }
 
   try {
-    // 1. Envia tecla F11 (Fullscreen nativo do Chromium virtual)
+    // Envia tecla F11 (Fullscreen nativo do Chromium virtual)
     state.hbInstance.sendEvent({ type: "keydown", key: "F11" });
     setTimeout(() => {
       if (state.hbInstance) state.hbInstance.sendEvent({ type: "keyup", key: "F11" });
     }, 50);
 
-    // 2. Envia tecla 'f' (Atalho padrão de tela cheia de players de vídeo como Superflixapi / YouTube / HTML5)
-    setTimeout(() => {
-      if (state.hbInstance) {
-        state.hbInstance.sendEvent({ type: "keydown", key: "f" });
-        setTimeout(() => {
-          if (state.hbInstance) state.hbInstance.sendEvent({ type: "keyup", key: "f" });
-        }, 50);
-      }
-    }, 100);
-
-    showToast("Tela Cheia (F11 / F) enviada ao player virtual!", "success");
+    showToast("Tela Cheia (F11) enviada ao player virtual!", "success");
   } catch (err) {
     console.warn("[Virtual Fullscreen error]:", err);
     showToast("Erro ao acionar tela cheia no player virtual.", "error");
@@ -2334,11 +2321,26 @@ if (roomElements.btnFullscreen) {
   });
 }
 
-const btnFsFloating = document.getElementById("btn-fullscreen-floating");
-if (btnFsFloating) {
-  btnFsFloating.addEventListener("click", (e) => {
+// Controle de colapso da barra de controles (seta para baixo) e restauração
+if (roomElements.btnCollapseDock) {
+  roomElements.btnCollapseDock.addEventListener("click", (e) => {
     e.stopPropagation();
-    enterFullscreenWithLandscape();
+    if (roomElements.roomDock) {
+      roomElements.roomDock.classList.add("dock-hidden");
+    }
+    if (roomElements.btnUnhideDock) {
+      roomElements.btnUnhideDock.classList.remove("hidden");
+    }
+  });
+}
+
+if (roomElements.btnUnhideDock) {
+  roomElements.btnUnhideDock.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (roomElements.roomDock) {
+      roomElements.roomDock.classList.remove("dock-hidden");
+    }
+    roomElements.btnUnhideDock.classList.add("hidden");
   });
 }
 
@@ -2412,7 +2414,7 @@ if (roomElements.browserMount) {
   }, { passive: true });
 }
 
-// Fechar tela cheia com tecla ESC ou alternar com tecla F ou chat com tecla C
+// Fechar tela cheia com tecla ESC ou chat com tecla C
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     if (isFsChatOpen) {
@@ -2425,13 +2427,6 @@ window.addEventListener("keydown", (e) => {
   }
   if ((e.key === "c" || e.key === "C") && isCurrentlyFullscreen() && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
     toggleFullscreenChat();
-  }
-  if ((e.key === "f" || e.key === "F") && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
-    if (!isCurrentlyFullscreen()) {
-      enterFullscreenWithLandscape();
-    } else {
-      exitFullscreenAndUnlock();
-    }
   }
 });
 
