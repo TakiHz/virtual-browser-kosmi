@@ -72,6 +72,30 @@ const profileModalElements = {
   btnSave: document.getElementById("btn-save-avatar"),
 };
 
+// ====================================================
+// ICONOGRAFIA LUCIDE PADRÃO (STROKE-WIDTH 1.75)
+// ====================================================
+const LUCIDE_ICONS = {
+  control: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><rect width="20" height="12" x="2" y="6" rx="6"/></svg>`,
+  shield: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>`,
+  volume2: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`,
+  volume1: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`,
+  volumeX: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/></svg>`,
+  maximize: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></svg>`,
+  minimize: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" x2="21" y1="10" y2="3"/><line x1="10" x2="3" y1="14" y2="21"/></svg>`,
+  chevronDown: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`,
+  eye: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  eyeOff: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`,
+  chat: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  theater: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M17 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></svg>`,
+  close: `<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
+  copy: `<svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
+  check: `<svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  link: `<svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></svg>`,
+  trash: `<svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`,
+  arrowLeft: `<svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`
+};
+
 const modalElements = {
   overlay: document.getElementById("modal-password"),
   closeBtn: document.getElementById("modal-close-btn"),
@@ -128,6 +152,7 @@ const roomElements = {
   dockToggleText: document.getElementById("dock-toggle-text"),
   fullscreenActionBar: document.getElementById("fullscreen-action-bar"),
   btnFullscreenChatToggle: document.getElementById("btn-fullscreen-chat-toggle"),
+  btnTheaterToggle: document.getElementById("btn-theater-mode-toggle"),
   fsChatBadge: document.getElementById("fs-chat-badge"),
   fullscreenChatOverlay: document.getElementById("fullscreen-chat-overlay"),
   fsChatMessages: document.getElementById("fs-chat-messages"),
@@ -1731,21 +1756,23 @@ function updateRoomState(data) {
 
   if (isMeControlling) {
     if (roomElements.controlStatusBadge) roomElements.controlStatusBadge.className = "control-status controlling";
-    if (roomElements.controlStatusText) roomElements.controlStatusText.textContent = "🎮 No controle";
+    if (roomElements.controlStatusText) roomElements.controlStatusText.innerHTML = `${LUCIDE_ICONS.control} <span>No controle</span>`;
     if (roomElements.btnToggleControl) {
-      roomElements.btnToggleControl.textContent = "🎮 No Controle";
+      roomElements.btnToggleControl.innerHTML = `${LUCIDE_ICONS.control} <span>No Controle</span>`;
       roomElements.btnToggleControl.className = "btn-dock btn-dock-slim control-active";
       roomElements.btnToggleControl.title = "Você está no controle! Clique para liberar.";
     }
   } else {
     if (roomElements.controlStatusBadge) roomElements.controlStatusBadge.className = "control-status";
     if (roomElements.controlStatusText) {
-      roomElements.controlStatusText.textContent = controllerName
-        ? `👀 ${controllerName}`
-        : "👀 Livre";
+      roomElements.controlStatusText.innerHTML = controllerName
+        ? `<span>👀 ${controllerName}</span>`
+        : `<span>Livre</span>`;
     }
     if (roomElements.btnToggleControl) {
-      roomElements.btnToggleControl.textContent = controllerName ? `👀 ${controllerName}` : "🎮 Controle";
+      roomElements.btnToggleControl.innerHTML = controllerName 
+        ? `<span>👀 ${controllerName}</span>` 
+        : `${LUCIDE_ICONS.control} <span>Controle</span>`;
       roomElements.btnToggleControl.className = "btn-dock btn-dock-slim control-inactive";
       roomElements.btnToggleControl.title = controllerName
         ? `${controllerName} está controlando. Clique para assumir.`
@@ -1765,23 +1792,37 @@ roomElements.btnToggleControl.addEventListener("click", () => {
   }
 });
 
-// COPIAR SENHA DE CONVITE DA SALA (Somente os 6 caracteres)
+// COPIAR SENHA DE CONVITE DA SALA (Somente os 6 caracteres com feedback tátil Apple)
 roomElements.btnCopyCode.addEventListener("click", async () => {
   if (!state.currentRoom) return;
   const ok = await copyToClipboard(state.currentRoom.code);
   if (ok) {
+    const originalHTML = roomElements.btnCopyCode.innerHTML;
+    roomElements.btnCopyCode.classList.add("btn-copied-pulse");
+    roomElements.btnCopyCode.innerHTML = `${LUCIDE_ICONS.check} <span>Copiado!</span>`;
+    setTimeout(() => {
+      roomElements.btnCopyCode.innerHTML = originalHTML;
+      roomElements.btnCopyCode.classList.remove("btn-copied-pulse");
+    }, 1600);
     showToast(`Senha de convite (${state.currentRoom.code}) copiada!`, "success");
   } else {
     showToast("Não foi possível copiar a senha de convite.", "error");
   }
 });
 
-// COPIAR LINK DE CONVITE COMPLETO
+// COPIAR LINK DE CONVITE COMPLETO (com feedback tátil Apple)
 roomElements.btnCopyLink.addEventListener("click", async () => {
   if (!state.currentRoom) return;
   const inviteLink = `${window.location.origin}/room/${state.currentRoom.code}`;
   const ok = await copyToClipboard(inviteLink);
   if (ok) {
+    const originalHTML = roomElements.btnCopyLink.innerHTML;
+    roomElements.btnCopyLink.classList.add("btn-copied-pulse");
+    roomElements.btnCopyLink.innerHTML = `${LUCIDE_ICONS.check} <span>Copiado!</span>`;
+    setTimeout(() => {
+      roomElements.btnCopyLink.innerHTML = originalHTML;
+      roomElements.btnCopyLink.classList.remove("btn-copied-pulse");
+    }, 1600);
     showToast("Link de convite copiado para a área de transferência!", "success");
   } else {
     showToast("Não foi possível copiar o link.", "error");
@@ -1909,7 +1950,7 @@ if (roomElements.volumeSlider) {
       } catch (_) {}
     }
     if (roomElements.btnMute) {
-      roomElements.btnMute.textContent = vol === 0 ? "🔇" : (vol < 0.5 ? "🔉" : "🔊");
+      roomElements.btnMute.innerHTML = vol === 0 ? LUCIDE_ICONS.volumeX : (vol < 0.5 ? LUCIDE_ICONS.volume1 : LUCIDE_ICONS.volume2);
     }
   });
 }
@@ -1927,7 +1968,7 @@ if (roomElements.btnMute) {
           state.hbInstance.volume = 0;
         } catch (_) {}
       }
-      roomElements.btnMute.textContent = "🔇";
+      roomElements.btnMute.innerHTML = LUCIDE_ICONS.volumeX;
     } else {
       const restoreVol = parseFloat(roomElements.volumeSlider.dataset.prevVolume || "1");
       roomElements.volumeSlider.value = restoreVol;
@@ -1936,7 +1977,7 @@ if (roomElements.btnMute) {
           state.hbInstance.volume = restoreVol;
         } catch (_) {}
       }
-      roomElements.btnMute.textContent = restoreVol < 0.5 ? "🔉" : "🔊";
+      roomElements.btnMute.innerHTML = restoreVol < 0.5 ? LUCIDE_ICONS.volume1 : LUCIDE_ICONS.volume2;
     }
   });
 }
@@ -1947,11 +1988,11 @@ if (roomElements.btnTogglePopupBlock) {
     state.blockPopups = !state.blockPopups;
     if (state.blockPopups) {
       roomElements.btnTogglePopupBlock.className = "btn-dock-pill btn-dock-pill-slim active";
-      roomElements.btnTogglePopupBlock.textContent = "🛡️ Pop-ups: ON";
+      roomElements.btnTogglePopupBlock.innerHTML = `${LUCIDE_ICONS.shield} <span>Pop-ups: ON</span>`;
       showToast("Bloqueador de pop-ups ATIVADO! 🛡️", "success");
     } else {
       roomElements.btnTogglePopupBlock.className = "btn-dock-pill btn-dock-pill-slim disabled";
-      roomElements.btnTogglePopupBlock.textContent = "⚠️ Pop-ups: OFF";
+      roomElements.btnTogglePopupBlock.innerHTML = `${LUCIDE_ICONS.shield} <span>Pop-ups: OFF</span>`;
       showToast("Bloqueador de pop-ups DESATIVADO. ⚠️", "warning");
     }
   });
@@ -2058,21 +2099,24 @@ function updateFullscreenUIState(isFs) {
 
   if (roomElements.btnFullscreen) {
     roomElements.btnFullscreen.title = isFs ? "Sair da Tela Cheia" : "Tela Cheia";
-    roomElements.btnFullscreen.innerHTML = isFs ? "🗗" : "⛶";
+    roomElements.btnFullscreen.innerHTML = isFs ? LUCIDE_ICONS.minimize : LUCIDE_ICONS.maximize;
   }
 }
 
 function enterEmulatedFullscreen(wrapper) {
   isEmulatedFullscreen = true;
+  document.documentElement.classList.add("fullscreen-active");
   document.body.classList.add("fullscreen-active");
   if (wrapper) {
     wrapper.classList.add("fullscreen-emulated");
   }
+  window.scrollTo(0, 0);
   updateFullscreenUIState(true);
 }
 
 function exitEmulatedFullscreen() {
   isEmulatedFullscreen = false;
+  document.documentElement.classList.remove("fullscreen-active");
   document.body.classList.remove("fullscreen-active");
   const wrapper =
     document.getElementById("browser-wrapper") ||
@@ -2264,7 +2308,7 @@ function setDockVisibility(visible) {
       toggleBtn.classList.remove("active");
       toggleBtn.title = "Ocultar barra de controles";
     }
-    if (toggleIcon) toggleIcon.textContent = "👁️";
+    if (toggleIcon) toggleIcon.innerHTML = LUCIDE_ICONS.eye;
     if (toggleText) toggleText.textContent = "Barra";
   } else {
     dock.classList.add("dock-hidden");
@@ -2272,7 +2316,7 @@ function setDockVisibility(visible) {
       toggleBtn.classList.add("active");
       toggleBtn.title = "Mostrar barra de controles";
     }
-    if (toggleIcon) toggleIcon.textContent = "▲";
+    if (toggleIcon) toggleIcon.innerHTML = LUCIDE_ICONS.eyeOff;
     if (toggleText) toggleText.textContent = "Barra";
   }
 }
@@ -2300,6 +2344,29 @@ if (roomElements.btnCollapseDock) {
   });
 }
 
+// MODO CINEMA / TEATRO (PC: Expande o vídeo para 100% da largura da janela)
+function toggleTheaterMode(force) {
+  const isTheater = typeof force === "boolean"
+    ? force
+    : !document.body.classList.contains("theater-mode");
+
+  document.body.classList.toggle("theater-mode", isTheater);
+  const btn = document.getElementById("btn-theater-mode-toggle");
+  if (btn) {
+    btn.classList.toggle("active", isTheater);
+    btn.title = isTheater ? "Sair do Modo Teatro (T)" : "Modo Teatro / Expandir Vídeo (T)";
+  }
+  showToast(isTheater ? "Modo Teatro ativado (tecla T)" : "Modo Teatro desativado", "info");
+}
+
+const btnTheaterToggle = document.getElementById("btn-theater-mode-toggle");
+if (btnTheaterToggle) {
+  btnTheaterToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleTheaterMode();
+  });
+}
+
 const btnFsExitFloating = document.getElementById("btn-fullscreen-exit");
 if (btnFsExitFloating) {
   btnFsExitFloating.addEventListener("click", (e) => {
@@ -2316,9 +2383,7 @@ if (btnFsChatToggle) {
       toggleFullscreenChat();
     } else {
       // No modo normal no PC, alterna a barra lateral da direita para expandir o vídeo (Modo Teatro)
-      if (roomElements.sidebar) {
-        roomElements.sidebar.classList.toggle("collapsed");
-      }
+      toggleTheaterMode();
     }
   });
 }
@@ -2353,6 +2418,59 @@ if (formFsChat) {
   });
 }
 
+// ====================================================
+// AUTO-HIDE INTELIGENTE DOS CONTROLES (INATIVIDADE 3.5s)
+// ====================================================
+let controlsInactivityTimer = null;
+const CONTROLS_INACTIVITY_MS = 3500;
+
+function wakeUpControls() {
+  document.body.classList.remove("controls-dimmed");
+  clearTimeout(controlsInactivityTimer);
+
+  const roomView = document.getElementById("view-room");
+  if (!roomView || roomView.classList.contains("hidden")) return;
+
+  const activeTag = document.activeElement ? document.activeElement.tagName : "";
+  if (activeTag === "INPUT" || activeTag === "TEXTAREA" || isFsChatOpen) return;
+
+  controlsInactivityTimer = setTimeout(() => {
+    const elTag = document.activeElement ? document.activeElement.tagName : "";
+    if (elTag !== "INPUT" && elTag !== "TEXTAREA" && !isFsChatOpen) {
+      document.body.classList.add("controls-dimmed");
+    }
+  }, CONTROLS_INACTIVITY_MS);
+}
+
+["pointermove", "pointerdown", "touchstart", "keydown"].forEach((evt) => {
+  window.addEventListener(evt, wakeUpControls, { passive: true });
+});
+
+if (roomElements.roomDock) {
+  roomElements.roomDock.addEventListener("pointerenter", () => {
+    document.body.classList.remove("controls-dimmed");
+    clearTimeout(controlsInactivityTimer);
+  });
+  roomElements.roomDock.addEventListener("pointerleave", wakeUpControls);
+}
+if (roomElements.fullscreenActionBar) {
+  roomElements.fullscreenActionBar.addEventListener("pointerenter", () => {
+    document.body.classList.remove("controls-dimmed");
+    clearTimeout(controlsInactivityTimer);
+  });
+  roomElements.fullscreenActionBar.addEventListener("pointerleave", wakeUpControls);
+}
+
+// Previne elastic bounce / pull-to-refresh no iOS Safari durante tela cheia
+document.addEventListener("touchmove", (e) => {
+  if (isEmulatedFullscreen) {
+    const isScrollable = e.target.closest("#fs-chat-messages") || e.target.closest("#users-list-box") || e.target.closest(".chat-messages");
+    if (!isScrollable) {
+      e.preventDefault();
+    }
+  }
+}, { passive: false });
+
 // Duplo clique ou duplo toque no player para alternar tela cheia (estilo YouTube/Netflix)
 if (roomElements.browserMount) {
   roomElements.browserMount.addEventListener("dblclick", (e) => {
@@ -2377,8 +2495,9 @@ if (roomElements.browserMount) {
   }, { passive: true });
 }
 
-// Fechar tela cheia com tecla ESC ou chat com tecla C
+// Fechar tela cheia com tecla ESC, chat com C, modo teatro com T
 window.addEventListener("keydown", (e) => {
+  const isInputActive = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
   if (e.key === "Escape") {
     if (isFsChatOpen) {
       toggleFullscreenChat(false);
@@ -2386,10 +2505,21 @@ window.addEventListener("keydown", (e) => {
     }
     if (isCurrentlyFullscreen()) {
       exitFullscreenAndUnlock();
+      return;
+    }
+    if (document.body.classList.contains("theater-mode")) {
+      toggleTheaterMode(false);
+      return;
     }
   }
-  if ((e.key === "c" || e.key === "C") && isCurrentlyFullscreen() && !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName)) {
+  if ((e.key === "c" || e.key === "C") && isCurrentlyFullscreen() && !isInputActive) {
     toggleFullscreenChat();
+  }
+  if ((e.key === "t" || e.key === "T") && !isCurrentlyFullscreen() && !isInputActive) {
+    const roomView = document.getElementById("view-room");
+    if (roomView && !roomView.classList.contains("hidden")) {
+      toggleTheaterMode();
+    }
   }
 });
 
