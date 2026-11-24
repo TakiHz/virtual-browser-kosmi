@@ -123,7 +123,9 @@ const roomElements = {
   btnRoomNavYoutube: document.getElementById("btn-room-nav-youtube"),
   btnRoomNavVizer: document.getElementById("btn-room-nav-vizer"),
   btnCollapseDock: document.getElementById("btn-collapse-dock"),
-  btnUnhideDock: document.getElementById("btn-unhide-dock"),
+  btnToggleDockVisibility: document.getElementById("btn-toggle-dock-visibility"),
+  dockToggleIcon: document.getElementById("dock-toggle-icon"),
+  dockToggleText: document.getElementById("dock-toggle-text"),
   fullscreenActionBar: document.getElementById("fullscreen-action-bar"),
   btnFullscreenChatToggle: document.getElementById("btn-fullscreen-chat-toggle"),
   fsChatBadge: document.getElementById("fs-chat-badge"),
@@ -186,8 +188,7 @@ function showScreen(screenName) {
     }
   });
   if (screenName === "room") {
-    if (roomElements.roomDock) roomElements.roomDock.classList.remove("dock-hidden");
-    if (roomElements.btnUnhideDock) roomElements.btnUnhideDock.classList.add("hidden");
+    setDockVisibility(true);
   }
 }
 
@@ -1199,14 +1200,6 @@ async function mountHyperbeam(embedUrl) {
       },
     });
 
-    // Trava resolução da VM Hyperbeam estritamente no padrão HD 16:9 (1280x720)
-    // Previne distorções na transmissão para quem assiste no PC
-    if (state.hbInstance && typeof state.hbInstance.resize === "function") {
-      try {
-        state.hbInstance.resize(1280, 720);
-      } catch (_) {}
-    }
-
     // Permissões completas de tela cheia, autoplay e mídia no iframe do Hyperbeam
     const ensureIframePermissions = () => {
       const iframes = roomElements.browserMount.querySelectorAll("iframe");
@@ -1234,13 +1227,12 @@ async function mountHyperbeam(embedUrl) {
     // Ativa suporte touch para celular com alinhamento pixel-perfect
     setupMobileTouchAndGestures();
 
-    // Aplica zoom padrão de 110% no navegador virtual conforme solicitado
-    setTimeout(() => {
-      applyVirtualBrowserZoom(1.10);
-    }, 1200);
-    setTimeout(() => {
-      applyVirtualBrowserZoom(1.10);
-    }, 3000);
+    // Aplica zoom padrão de 110% apenas uma vez ao criar a sala para não afetar quem já está assistindo
+    if (state.user && state.currentRoom && state.currentRoom.hostNickname === state.user.nickname) {
+      setTimeout(() => {
+        applyVirtualBrowserZoom(1.10);
+      }, 1500);
+    }
 
     showToast("Navegador virtual carregado com sucesso!", "success");
   } catch (err) {
@@ -1307,16 +1299,6 @@ function setupAntiPopupGuard(hb) {
         console.warn("[Anti-Popup error]:", err.message);
       }
     });
-
-    if (hb.tabs.onUpdated) {
-      hb.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
-        if (changeInfo.status === "complete") {
-          try {
-            await hb.tabs.setZoom(tabId, 1.10);
-          } catch (_) {}
-        }
-      });
-    }
 
     console.log("🛡️ Anti-Popup Guard ativo no navegador virtual.");
   } catch (err) {
@@ -2058,16 +2040,7 @@ function isCurrentlyFullscreen() {
 }
 
 function updateFullscreenUIState(isFs) {
-  const actionBar = document.getElementById("fullscreen-action-bar");
   const btnExit = document.getElementById("btn-fullscreen-exit");
-
-  if (actionBar) {
-    if (isFs) {
-      actionBar.classList.remove("hidden");
-    } else {
-      actionBar.classList.add("hidden");
-    }
-  }
 
   if (btnExit) {
     if (isFs) {
@@ -2189,21 +2162,7 @@ async function enterFullscreenWithLandscape() {
   // 3. Aciona o travamento horizontal se suportado
   await lockLandscapeOrientationSafely();
 
-  // 4. Garante proporção HD 16:9 apenas se a resolução não for 1280x720 (evita que o player saia de tela cheia por resize)
-  if (state.hbInstance && typeof state.hbInstance.resize === "function") {
-    if (state.hbInstance.width !== 1280 || state.hbInstance.height !== 720) {
-      try {
-        state.hbInstance.resize(1280, 720);
-      } catch (_) {}
-    }
-  }
-
-  // 5. Aciona tela cheia sincronizada no player do navegador virtual (F11 e f)
-  setTimeout(() => {
-    triggerVirtualBrowserFullscreen();
-  }, 250);
-
-  // 6. Se for dispositivo móvel em pé, avisa que pode virar para horizontal
+  // 4. Se for dispositivo móvel em pé, avisa que pode virar para horizontal
   if (
     window.innerWidth < window.innerHeight &&
     (window.innerWidth <= 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
@@ -2237,25 +2196,6 @@ async function exitFullscreenAndUnlock() {
     console.warn("Erro ao sair de tela cheia:", err.message);
   }
 
-  // 3. Envia Escape e F11 para restaurar modo normal no player do navegador virtual
-  if (state.hbInstance) {
-    try {
-      state.hbInstance.sendEvent({ type: "keydown", key: "Escape" });
-      setTimeout(() => {
-        if (state.hbInstance) state.hbInstance.sendEvent({ type: "keyup", key: "Escape" });
-      }, 50);
-    } catch (_) {}
-  }
-
-  // 4. Restaura resolução padrão da VM Hyperbeam apenas se for diferente
-  if (state.hbInstance && typeof state.hbInstance.resize === "function") {
-    if (state.hbInstance.width !== 1280 || state.hbInstance.height !== 720) {
-      try {
-        state.hbInstance.resize(1280, 720);
-      } catch (_) {}
-    }
-  }
-
   updateFullscreenUIState(false);
   unlockOrientationSafely();
 }
@@ -2264,18 +2204,6 @@ function handleFullscreenChange() {
   const isNativeFs = !!getActiveFullscreenElement();
   const isFs = isNativeFs || isEmulatedFullscreen;
   updateFullscreenUIState(isFs);
-
-  // Mantém SEMPRE a VM Hyperbeam na proporção 16:9 (1280x720) compartilhada
-  // apenas disparando resize se as dimensões forem divergentes
-  if (state.hbInstance && typeof state.hbInstance.resize === "function") {
-    if (state.hbInstance.width !== 1280 || state.hbInstance.height !== 720) {
-      try {
-        state.hbInstance.resize(1280, 720);
-      } catch (err) {
-        console.warn("[Hyperbeam resize error]:", err.message);
-      }
-    }
-  }
 
   if (!isFs) {
     shouldLockLandscape = false;
@@ -2321,26 +2249,54 @@ if (roomElements.btnFullscreen) {
   });
 }
 
-// Controle de colapso da barra de controles (seta para baixo) e restauração
-if (roomElements.btnCollapseDock) {
-  roomElements.btnCollapseDock.addEventListener("click", (e) => {
+// Controle de visibilidade da barra de controles (Ocultar / Mostrar)
+function setDockVisibility(visible) {
+  const dock = roomElements.roomDock || document.getElementById("room-dock");
+  const toggleBtn = roomElements.btnToggleDockVisibility || document.getElementById("btn-toggle-dock-visibility");
+  const toggleIcon = roomElements.dockToggleIcon || document.getElementById("dock-toggle-icon");
+  const toggleText = roomElements.dockToggleText || document.getElementById("dock-toggle-text");
+
+  if (!dock) return;
+
+  if (visible) {
+    dock.classList.remove("dock-hidden");
+    if (toggleBtn) {
+      toggleBtn.classList.remove("active");
+      toggleBtn.title = "Ocultar barra de controles";
+    }
+    if (toggleIcon) toggleIcon.textContent = "👁️";
+    if (toggleText) toggleText.textContent = "Barra";
+  } else {
+    dock.classList.add("dock-hidden");
+    if (toggleBtn) {
+      toggleBtn.classList.add("active");
+      toggleBtn.title = "Mostrar barra de controles";
+    }
+    if (toggleIcon) toggleIcon.textContent = "▲";
+    if (toggleText) toggleText.textContent = "Barra";
+  }
+}
+
+function toggleDockVisibility() {
+  const dock = roomElements.roomDock || document.getElementById("room-dock");
+  if (!dock) return;
+  const isCurrentlyHidden = dock.classList.contains("dock-hidden");
+  setDockVisibility(isCurrentlyHidden);
+}
+
+// Botão de alternar barra (ao lado do botão de Chat)
+if (roomElements.btnToggleDockVisibility) {
+  roomElements.btnToggleDockVisibility.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (roomElements.roomDock) {
-      roomElements.roomDock.classList.add("dock-hidden");
-    }
-    if (roomElements.btnUnhideDock) {
-      roomElements.btnUnhideDock.classList.remove("hidden");
-    }
+    toggleDockVisibility();
   });
 }
 
-if (roomElements.btnUnhideDock) {
-  roomElements.btnUnhideDock.addEventListener("click", (e) => {
+// Botão de seta para baixo no próprio dock (rebaixa a barra)
+if (roomElements.btnCollapseDock) {
+  roomElements.btnCollapseDock.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (roomElements.roomDock) {
-      roomElements.roomDock.classList.remove("dock-hidden");
-    }
-    roomElements.btnUnhideDock.classList.add("hidden");
+    setDockVisibility(false);
   });
 }
 
@@ -2356,7 +2312,14 @@ const btnFsChatToggle = document.getElementById("btn-fullscreen-chat-toggle");
 if (btnFsChatToggle) {
   btnFsChatToggle.addEventListener("click", (e) => {
     e.stopPropagation();
-    toggleFullscreenChat();
+    if (isCurrentlyFullscreen()) {
+      toggleFullscreenChat();
+    } else {
+      // No modo normal no PC, alterna a barra lateral da direita para expandir o vídeo (Modo Teatro)
+      if (roomElements.sidebar) {
+        roomElements.sidebar.classList.toggle("collapsed");
+      }
+    }
   });
 }
 

@@ -231,14 +231,20 @@
 
 
 
-      <!-- BARRA DE AÇÕES FLUTUANTES EM TELA CHEIA (PC & CELULAR) -->
-      <div id="fullscreen-action-bar" class="fullscreen-action-bar hidden">
-        <button id="btn-fullscreen-chat-toggle" class="btn-fs-pill" type="button" title="Abrir ou ocultar chat em tela cheia">
+      <!-- BARRA DE AÇÕES FLUTUANTES (PC & CELULAR) -->
+      <div id="fullscreen-action-bar" class="fullscreen-action-bar">
+        <!-- BOTÃO DE OCULTAR / APARECER A BARRA DE CONTROLE (AO LADO DO CHAT) -->
+        <button id="btn-toggle-dock-visibility" class="btn-fs-pill" type="button" title="Ocultar ou mostrar a barra de controles">
+          <span class="fs-pill-icon" id="dock-toggle-icon">👁️</span>
+          <span class="fs-pill-text" id="dock-toggle-text">Barra</span>
+        </button>
+
+        <button id="btn-fullscreen-chat-toggle" class="btn-fs-pill" type="button" title="Abrir ou alternar chat">
           <span class="fs-pill-icon">💬</span>
           <span class="fs-pill-text">Chat</span>
           <span id="fs-chat-badge" class="fs-chat-badge hidden">0</span>
         </button>
-        <button id="btn-fullscreen-exit" class="btn-fs-pill btn-fs-exit" type="button" title="Sair da tela cheia (ESC)">
+        <button id="btn-fullscreen-exit" class="btn-fs-pill btn-fs-exit hidden" type="button" title="Sair da tela cheia (ESC)">
           <span class="fs-pill-icon">✕</span>
           <span class="fs-pill-text">Sair</span>
         </button>
@@ -315,12 +321,6 @@
         <span class="collapse-arrow">▼</span>
       </button>
     </div>
-
-    <!-- BOTÃO PARA REEXIBIR CONTROLES (SETA PARA CIMA) QUANDO A BARRA FOR OCULTADA -->
-    <button id="btn-unhide-dock" class="btn-unhide-dock hidden" type="button" title="Mostrar barra de controles">
-      <span class="unhide-arrow">▲</span>
-      <span class="unhide-text">Controles</span>
-    </button>
 
     <!-- PAINEL DA DIREITA NO PC (TUDO À DIREITA) / LAYOUT INTEGRADO NO CELULAR -->
     <div class="room-side-panel" id="room-side-panel">
