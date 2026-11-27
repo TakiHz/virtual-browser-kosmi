@@ -1369,40 +1369,48 @@ function setupMobileTouchAndGestures() {
   let lastTwoFingerCenterY = null;
 
   function getNormalizedCoords(touch) {
-    // Busca elemento de vídeo/canvas/iframe interno do Hyperbeam para precisão exata
-    const target = mount.querySelector("video") || mount.querySelector("canvas") || mount.querySelector("iframe") || mount;
-    const rect = target.getBoundingClientRect();
+    // Busca elemento de mídia real (dentro do Shadow DOM ou regular)
+    const shadow = mount.shadowRoot;
+    const mediaEl = (shadow && (shadow.querySelector("video") || shadow.querySelector("canvas") || shadow.querySelector("iframe"))) ||
+                    mount.querySelector("video") ||
+                    mount.querySelector("canvas") ||
+                    mount.querySelector("iframe") ||
+                    mount;
+
+    const rect = mount.getBoundingClientRect();
     if (!rect.width || !rect.height) return { x: 0.5, y: 0.5 };
 
     // Proporção nativa da transmissão da VM Hyperbeam (16:9 = 1.777778)
     let naturalAspect = 16 / 9;
-    if (target.videoWidth && target.videoHeight && target.videoHeight > 0) {
-      naturalAspect = target.videoWidth / target.videoHeight;
+    if (mediaEl && mediaEl.videoWidth && mediaEl.videoHeight && mediaEl.videoHeight > 0) {
+      naturalAspect = mediaEl.videoWidth / mediaEl.videoHeight;
+    } else if (state.hbInstance && state.hbInstance.width && state.hbInstance.height && state.hbInstance.height > 0) {
+      naturalAspect = state.hbInstance.width / state.hbInstance.height;
     }
 
     const containerAspect = rect.width / rect.height;
-    const computedFit = (window.getComputedStyle(target).objectFit || "contain").toLowerCase();
+
+    // Detecta se está em tela cheia (nativa ou emulada)
+    const isFs = document.fullscreenElement ||
+                 document.webkitFullscreenElement ||
+                 document.body.classList.contains("fullscreen-active") ||
+                 (roomElements.browserWrapper && roomElements.browserWrapper.classList.contains("fullscreen-emulated"));
 
     let renderedWidth = rect.width;
     let renderedHeight = rect.height;
     let renderedLeft = rect.left;
     let renderedTop = rect.top;
 
-    if (computedFit === "fill") {
-      renderedWidth = rect.width;
-      renderedHeight = rect.height;
-      renderedLeft = rect.left;
-      renderedTop = rect.top;
-    } else {
-      // Modo "contain" (padrão em tela cheia com barras pretas)
+    // Em tela cheia ou quando a proporção do container não é 16:9 exata, há letterbox/pillarbox (object-fit: contain)
+    if (isFs || Math.abs(containerAspect - naturalAspect) > 0.02) {
       if (containerAspect > naturalAspect) {
-        // Barras pretas nas laterais (pillarbox) - típico em celulares na horizontal (19.5:9 ou 20:9)
+        // Pillarbox: container mais largo que o vídeo -> barras pretas nas laterais (comum em celulares em landscape)
         renderedHeight = rect.height;
         renderedWidth = rect.height * naturalAspect;
         renderedLeft = rect.left + (rect.width - renderedWidth) / 2;
         renderedTop = rect.top;
       } else {
-        // Barras pretas no topo e embaixo (letterbox) - típico em celulares na vertical
+        // Letterbox: container mais alto que o vídeo -> barras pretas no topo e embaixo (comum em celulares em portrait)
         renderedWidth = rect.width;
         renderedHeight = rect.width / naturalAspect;
         renderedLeft = rect.left;
@@ -1410,9 +1418,12 @@ function setupMobileTouchAndGestures() {
       }
     }
 
-    // Calcula coordenadas normalizadas (0 a 1) estritamente sobre a área visível do vídeo
-    const rawX = touch.clientX - renderedLeft;
-    const rawY = touch.clientY - renderedTop;
+    const clientX = (touch.clientX !== undefined) ? touch.clientX : (touch.pageX - (window.scrollX || 0));
+    const clientY = (touch.clientY !== undefined) ? touch.clientY : (touch.pageY - (window.scrollY || 0));
+
+    const rawX = clientX - renderedLeft;
+    const rawY = clientY - renderedTop;
+
     const x = Math.max(0, Math.min(1, rawX / renderedWidth));
     const y = Math.max(0, Math.min(1, rawY / renderedHeight));
 
@@ -1447,7 +1458,10 @@ function setupMobileTouchAndGestures() {
     } else if (e.touches.length === 2) {
       lastTwoFingerCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
     }
-  }, { passive: true });
+
+    // Impede que o browser mobile dispare eventos sintéticos de mouse (pointerdown/mousedown) com coordenadas tortas
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false, capture: true });
 
   // Mover o dedo (touchmove): mexe o cursor suavemente
   mount.addEventListener("touchmove", (e) => {
@@ -1469,7 +1483,6 @@ function setupMobileTouchAndGestures() {
       } catch (err) {
         console.warn("Touchmove sendEvent error:", err);
       }
-      if (e.cancelable) e.preventDefault();
     } else if (e.touches.length === 2) {
       // Rolagem com 2 dedos (scroll wheel)
       const currentCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
@@ -1486,9 +1499,11 @@ function setupMobileTouchAndGestures() {
         }
       }
       lastTwoFingerCenterY = currentCenterY;
-      if (e.cancelable) e.preventDefault();
     }
-  }, { passive: false });
+
+    // Previne scroll acidental do browser e cancela mousemove sintético
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false, capture: true });
 
   // Soltar o dedo (touchend): clique onde o usuário tocou
   mount.addEventListener("touchend", (e) => {
@@ -1541,7 +1556,10 @@ function setupMobileTouchAndGestures() {
       lastTwoFingerCenterY = null;
       isMoving = false;
     }
-  }, { passive: true });
+
+    // Previne emulação tardia de click/mouseup sintético do navegador mobile
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false, capture: true });
 }
 
 // ====================================================

@@ -1856,7 +1856,7 @@ body {
 }
 
 /* Responsividade do Chat em Tela Cheia no Celular (Opacidade balanceada 94% & Bordas sutis) */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 520px) and (orientation: landscape) {
   .fullscreen-chat-overlay {
     right: 10px !important;
     left: auto !important;
@@ -1873,18 +1873,38 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
 
+  /* FORA DE TELA CHEIA NO MOBILE: NENHUM BOTÃO FLUTUANTE SOBRE O VÍDEO DO PLAYER (TELA LIMPA) */
   .fullscreen-action-bar {
+    display: none !important;
+  }
+
+  /* EM TELA CHEIA NO MOBILE: MOSTRA BARRA APENAS COM BOTÕES DE SAIR E CHAT (OCULTA O BOTÃO BARRA) */
+  body.fullscreen-active .fullscreen-action-bar,
+  html.fullscreen-active .fullscreen-action-bar,
+  :fullscreen .fullscreen-action-bar,
+  :-webkit-full-screen .fullscreen-action-bar,
+  .browser-wrapper.fullscreen-emulated .fullscreen-action-bar,
+  .browser-wrapper.fullscreen-emulated ~ .fullscreen-action-bar {
+    display: flex !important;
     top: 10px !important;
     right: 10px !important;
     top: max(10px, env(safe-area-inset-top, 10px)) !important;
     right: max(10px, env(safe-area-inset-right, 10px)) !important;
-    gap: 5px !important;
+    gap: 6px !important;
     padding: 4px 8px !important;
     max-width: calc(100vw - 20px) !important;
   }
 
+  body.fullscreen-active #btn-toggle-dock-visibility,
+  html.fullscreen-active #btn-toggle-dock-visibility,
+  :fullscreen #btn-toggle-dock-visibility,
+  :-webkit-full-screen #btn-toggle-dock-visibility,
+  .browser-wrapper.fullscreen-emulated ~ #fullscreen-action-bar #btn-toggle-dock-visibility {
+    display: none !important;
+  }
+
   .btn-fs-pill {
-    padding: 6px 10px !important;
+    padding: 6px 12px !important;
     font-size: 0.74rem !important;
   }
 }
@@ -3098,7 +3118,7 @@ body.fullscreen-active .room-dock.dock-hidden,
    RESPONSIVIDADE: CELULAR / MOBILE VIEW
    (Proporção 16:9 Exata & Alinhamento Pixel-Perfect)
    ==================================================== */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 520px) and (orientation: landscape) {
   .room-side-panel {
     display: contents !important;
   }
@@ -3256,6 +3276,7 @@ body.fullscreen-active .room-dock.dock-hidden,
     height: 100% !important;
     aspect-ratio: 16 / 9 !important;
     background: #000 !important;
+    touch-action: none !important;
   }
 
   #browser-mount > *,
@@ -3266,6 +3287,7 @@ body.fullscreen-active .room-dock.dock-hidden,
     height: 100% !important;
     aspect-ratio: 16 / 9 !important;
     object-fit: fill !important;
+    touch-action: none !important;
   }
 
   /* FULLSCREEN EMULADO NO MOBILE (IPHONE / IOS / ANDROID FALLBACK) */
@@ -3300,6 +3322,7 @@ body.fullscreen-active .room-dock.dock-hidden,
     max-height: 100dvh !important;
     aspect-ratio: auto !important;
     background: #000 !important;
+    touch-action: none !important;
   }
 
   body.fullscreen-active .browser-wrapper #browser-mount > *,
@@ -3317,9 +3340,22 @@ body.fullscreen-active .room-dock.dock-hidden,
     max-height: 100dvh !important;
     aspect-ratio: auto !important;
     object-fit: contain !important;
+    touch-action: none !important;
   }
 
-  /* 3. Dock de Controles Logo Abaixo do Player no Celular */
+  /* FULLSCREEN NO MOBILE: OCULTA COMPLETAMENTE A DOCK INFERIOR (SÓ FICAM SAIR E CHAT) */
+  body.fullscreen-active .room-dock,
+  body.fullscreen-active #room-dock,
+  :fullscreen .room-dock,
+  :fullscreen #room-dock,
+  :-webkit-full-screen .room-dock,
+  :-webkit-full-screen #room-dock,
+  .browser-wrapper.fullscreen-emulated ~ .room-dock,
+  .browser-wrapper.fullscreen-emulated ~ #room-dock {
+    display: none !important;
+  }
+
+  /* 3. Dock de Controles Logo Abaixo do Player no Celular (FIXA EM CIMA DO CHAT NO MODO NORMAL) */
   .room-dock {
     order: 3 !important;
     flex-shrink: 0 !important;
@@ -3346,6 +3382,9 @@ body.fullscreen-active .room-dock.dock-hidden,
     max-width: 100vw !important;
     box-sizing: border-box !important;
     z-index: 20 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
   }
 
   .room-dock::-webkit-scrollbar {
@@ -3356,9 +3395,23 @@ body.fullscreen-active .room-dock.dock-hidden,
     flex-shrink: 0 !important;
   }
 
-  /* Ocultar dock no celular quando colapsado */
+  /* Fora de tela cheia no celular a dock é fixa e sempre visível em cima do chat */
   .room-dock.dock-hidden {
+    display: flex !important;
+  }
+
+  /* Oculta botão de colapsar dock no celular para manter fixa */
+  .room-dock #btn-collapse-dock {
     display: none !important;
+  }
+
+  /* Previne que o auto-hide de desktop oculte a dock no celular */
+  body.controls-dimmed .room-dock,
+  body.controls-dimmed #room-dock {
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
   }
 
   .btn-dock-slim {
