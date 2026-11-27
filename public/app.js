@@ -2358,6 +2358,13 @@ function setDockVisibility(visible) {
 
   if (!dock) return;
 
+  const isMobile = window.innerWidth <= 768 || (window.innerHeight <= 520 && window.matchMedia("(orientation: landscape)").matches);
+  if (isMobile && !isCurrentlyFullscreen()) {
+    // No mobile fora de tela cheia, a dock é permanentemente fixa e visível acima do chat
+    dock.classList.remove("dock-hidden");
+    return;
+  }
+
   if (visible) {
     dock.classList.remove("dock-hidden");
     if (toggleBtn) {
@@ -2378,6 +2385,10 @@ function setDockVisibility(visible) {
 }
 
 function toggleDockVisibility() {
+  const isMobile = window.innerWidth <= 768 || (window.innerHeight <= 520 && window.matchMedia("(orientation: landscape)").matches);
+  if (isMobile && !isCurrentlyFullscreen()) {
+    return;
+  }
   const dock = roomElements.roomDock || document.getElementById("room-dock");
   if (!dock) return;
   const isCurrentlyHidden = dock.classList.contains("dock-hidden");
@@ -2396,7 +2407,10 @@ if (roomElements.btnToggleDockVisibility) {
 if (roomElements.btnCollapseDock) {
   roomElements.btnCollapseDock.addEventListener("click", (e) => {
     e.stopPropagation();
-    setDockVisibility(false);
+    const isMobile = window.innerWidth <= 768 || (window.innerHeight <= 520 && window.matchMedia("(orientation: landscape)").matches);
+    if (!isMobile) {
+      setDockVisibility(false);
+    }
   });
 }
 
@@ -2472,12 +2486,22 @@ function wakeUpControls() {
   const roomView = document.getElementById("view-room");
   if (!roomView || roomView.classList.contains("hidden")) return;
 
+  // No mobile fora de tela cheia, a dock é permanente e fixa acima do chat, nunca deve sumir!
+  const isMobile = window.innerWidth <= 768 || (window.innerHeight <= 520 && window.matchMedia("(orientation: landscape)").matches);
+  if (isMobile && !isCurrentlyFullscreen()) {
+    return;
+  }
+
   const activeTag = document.activeElement ? document.activeElement.tagName : "";
   if (activeTag === "INPUT" || activeTag === "TEXTAREA" || isFsChatOpen) return;
 
   controlsInactivityTimer = setTimeout(() => {
     const elTag = document.activeElement ? document.activeElement.tagName : "";
     if (elTag !== "INPUT" && elTag !== "TEXTAREA" && !isFsChatOpen) {
+      const mobileCheck = window.innerWidth <= 768 || (window.innerHeight <= 520 && window.matchMedia("(orientation: landscape)").matches);
+      if (mobileCheck && !isCurrentlyFullscreen()) {
+        return;
+      }
       document.body.classList.add("controls-dimmed");
     }
   }, CONTROLS_INACTIVITY_MS);
@@ -2501,6 +2525,17 @@ if (roomElements.fullscreenActionBar) {
   });
   roomElements.fullscreenActionBar.addEventListener("pointerleave", wakeUpControls);
 }
+
+window.addEventListener("resize", () => {
+  const isMobile = window.innerWidth <= 768 || (window.innerHeight <= 520 && window.matchMedia("(orientation: landscape)").matches);
+  if (isMobile && !isCurrentlyFullscreen()) {
+    document.body.classList.remove("controls-dimmed");
+    clearTimeout(controlsInactivityTimer);
+    if (roomElements.roomDock) {
+      roomElements.roomDock.classList.remove("dock-hidden");
+    }
+  }
+});
 
 // Previne elastic bounce / pull-to-refresh no iOS Safari durante tela cheia
 document.addEventListener("touchmove", (e) => {

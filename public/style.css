@@ -2557,16 +2557,18 @@ body.fullscreen-active {
   box-shadow: 0 0 8px #4ade80;
 }
 
-/* AUTO-HIDE INTELIGENTE DOS CONTROLES (ESTILO CINEMATOGRÁFICO) */
-body.controls-dimmed #room-dock:not(:hover),
-body.controls-dimmed #fullscreen-action-bar:not(:hover) {
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transform: translateX(-50%) translateY(24px) !important;
-}
+/* AUTO-HIDE INTELIGENTE DOS CONTROLES (ESTILO CINEMATOGRÁFICO - APENAS DESKTOP) */
+@media (min-width: 769px) {
+  body.controls-dimmed #room-dock:not(:hover),
+  body.controls-dimmed #fullscreen-action-bar:not(:hover) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateX(-50%) translateY(24px) !important;
+  }
 
-body.controls-dimmed #fullscreen-action-bar:not(:hover) {
-  transform: translateY(-16px) !important;
+  body.controls-dimmed #fullscreen-action-bar:not(:hover) {
+    transform: translateY(-16px) !important;
+  }
 }
 
 /* 2. DOCK DE CONTROLES DO NAVEGADOR (PARTE INFERIOR DA TELA NO MODO PC) */
@@ -2617,21 +2619,23 @@ body.fullscreen-active .room-dock,
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), 0 2px 10px rgba(0, 0, 0, 0.5) !important;
 }
 
-/* Estado oculto da barra de controles (rebaixada pela seta) */
-.room-dock.dock-hidden {
-  opacity: 0 !important;
-  transform: translateX(-50%) translateY(120px) !important;
-  pointer-events: none !important;
-  visibility: hidden !important;
-}
+/* Estado oculto da barra de controles (rebaixada pela seta no PC) */
+@media (min-width: 769px) {
+  .room-dock.dock-hidden {
+    opacity: 0 !important;
+    transform: translateX(-50%) translateY(120px) !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
 
-body.fullscreen-active .room-dock.dock-hidden,
-:fullscreen .room-dock.dock-hidden,
-:-webkit-full-screen .room-dock.dock-hidden {
-  transform: translateX(-50%) translateY(120px) !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  visibility: hidden !important;
+  body.fullscreen-active .room-dock.dock-hidden,
+  :fullscreen .room-dock.dock-hidden,
+  :-webkit-full-screen .room-dock.dock-hidden {
+    transform: translateX(-50%) translateY(120px) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
 }
 
 /* Botão de seta para baixo na barra (Ocultar / Baixar dock) */
@@ -3355,12 +3359,19 @@ body.fullscreen-active .room-dock.dock-hidden,
     display: none !important;
   }
 
-  /* 3. Dock de Controles Logo Abaixo do Player no Celular (FIXA EM CIMA DO CHAT NO MODO NORMAL) */
-  .room-dock {
+  /* 3. Dock de Controles Fixa Logo Acima do Chat no Celular (NUNCA SOME NO MODO NORMAL) */
+  .room-dock,
+  #room-dock,
+  .room-dock.dock-hidden,
+  #room-dock.dock-hidden,
+  body.controls-dimmed .room-dock,
+  body.controls-dimmed #room-dock,
+  body.controls-dimmed .room-dock:not(:hover),
+  body.controls-dimmed #room-dock:not(:hover) {
     order: 3 !important;
     flex-shrink: 0 !important;
     width: 100% !important;
-    position: static !important;
+    position: relative !important;
     transform: none !important;
     left: auto !important;
     bottom: auto !important;
@@ -3381,10 +3392,11 @@ body.fullscreen-active .room-dock.dock-hidden,
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4) !important;
     max-width: 100vw !important;
     box-sizing: border-box !important;
-    z-index: 20 !important;
+    z-index: 30 !important;
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
+    transition: none !important;
   }
 
   .room-dock::-webkit-scrollbar {
@@ -3395,23 +3407,10 @@ body.fullscreen-active .room-dock.dock-hidden,
     flex-shrink: 0 !important;
   }
 
-  /* Fora de tela cheia no celular a dock é fixa e sempre visível em cima do chat */
-  .room-dock.dock-hidden {
-    display: flex !important;
-  }
-
-  /* Oculta botão de colapsar dock no celular para manter fixa */
-  .room-dock #btn-collapse-dock {
+  /* Oculta botão de colapsar dock no celular para manter fixa permanentemente */
+  .room-dock #btn-collapse-dock,
+  #btn-collapse-dock {
     display: none !important;
-  }
-
-  /* Previne que o auto-hide de desktop oculte a dock no celular */
-  body.controls-dimmed .room-dock,
-  body.controls-dimmed #room-dock {
-    opacity: 1 !important;
-    transform: none !important;
-    pointer-events: auto !important;
-    visibility: visible !important;
   }
 
   .btn-dock-slim {
